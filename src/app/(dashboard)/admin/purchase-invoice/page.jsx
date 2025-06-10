@@ -568,7 +568,7 @@ export default function PurchaseInvoiceForm() {
   return (
     <div ref={parentRef} className="m-11 p-5 shadow-xl">
       <h1 className="text-2xl font-bold mb-4">Purchase Invoice Form</h1>
-      {/* Barcode Scan Section */}
+      {/* Barcode Scan Section
       <div className="mb-6 p-4 border rounded-lg shadow-lg">
         <h2 className="text-lg font-semibold mb-2">Barcode Scan</h2>
         <div className="flex gap-2">
@@ -587,10 +587,14 @@ export default function PurchaseInvoiceForm() {
             Scan Barcode
           </button>
         </div>
-      </div>
+      </div> */}
       {/* Supplier & Document Details */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
+           <div>
+            <label className="block mb-2 font-medium">Supplier Code</label>
+            <input type="text" name="supplierCode" value={grnData.supplierCode} readOnly className="w-full p-2 border rounded bg-gray-100" />
+          </div>
           <div>
             <label className="block mb-2 font-medium">Supplier Name</label>
             {grnData.supplierName ? (
@@ -605,10 +609,7 @@ export default function PurchaseInvoiceForm() {
               <SupplierSearch onSelectSupplier={handleSupplierSelect} />
             )}
           </div>
-          <div>
-            <label className="block mb-2 font-medium">Supplier Code</label>
-            <input type="text" name="supplierCode" value={grnData.supplierCode} readOnly className="w-full p-2 border rounded bg-gray-100" />
-          </div>
+         
           <div>
             <label className="block mb-2 font-medium">Contact Person</label>
             <input type="text" name="contactPerson" value={grnData.contactPerson} readOnly className="w-full p-2 border rounded bg-gray-100" />
@@ -632,7 +633,7 @@ export default function PurchaseInvoiceForm() {
             </select>
           </div>
         </div>
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select name="status" value={grnData.status} onChange={handleInputChange} className="w-full p-2 border rounded">

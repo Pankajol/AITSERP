@@ -7,6 +7,9 @@ import ItemSection from "@/components/ItemSection";
 import SupplierSearch from "@/components/SupplierSearch";
 import Link from "next/link";
 import { FaEdit } from "react-icons/fa";
+import { Suspense } from "react";
+// Initial state for the form
+
 
 const initialState = {
   supplierCode: "",
@@ -54,7 +57,17 @@ function formatDateForInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function OrderForm() {
+function OrderFormWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <OrderForm />
+    </Suspense>
+  );
+}
+
+
+
+ function OrderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
@@ -343,3 +356,5 @@ export default function OrderForm() {
     </div>
   );
 }
+
+export default OrderFormWrapper;

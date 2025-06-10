@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaEye, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function CreditNoteView() {
   const [notes, setNotes] = useState([]);
@@ -72,7 +72,7 @@ export default function CreditNoteView() {
                 <td className="py-3 px-4 border-b text-center">{note.refNumber}</td>
                 <td className="py-3 px-4 border-b">
                   <div className="flex justify-center space-x-2">
-                    <Link href={`/admin/credit-note/${note._id}`}>
+                    <Link href={`/admin/credit-memo-veiw/${note._id}`}>
                       <button
                         className="flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition duration-200"
                         title="View Details"
@@ -95,6 +95,22 @@ export default function CreditNoteView() {
                     >
                       <FaTrash />
                     </button>
+                    <Link href={`/admin/credit-note/${note._id}/send-email`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition duration-200"
+                        title="Send Email"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    <Link href={`/admin/credit-note/${note._id}/send-whatsapp`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="Send WhatsApp"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCopy, FaEye, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function SalesQuotationList() {
   const [quotations, setQuotations] = useState([]);
@@ -216,6 +216,24 @@ export default function SalesQuotationList() {
                       <span className="hidden sm:inline">Invoice</span>
                     </button> */}
                     <CopyToDropdown handleCopyTo={handleCopyTo} quotation={quotation} />
+                    {/* Email Button */}
+                    <Link href={`/admin/sales-quotation-email/${quotation._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
+                        title="Email Quotation"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    {/* WhatsApp Button */}
+                    <Link href={`/admin/sales-quotation-whatsapp/${quotation._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="WhatsApp Quotation"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

@@ -18,7 +18,10 @@ const InventorySchema = new mongoose.Schema({
   onOrder: { type: Number, default: 0 },   // Pending purchase orders (if applicable)
   unitPrice: { type: Number, default: 0 },
   // For batch-managed items, store batch details.
-  batches: { type: [InventoryBatchSchema], default: [] }
+  batches: { type: [InventoryBatchSchema], default: [] },
+  productNo: { type: mongoose.Schema.Types.ObjectId, ref: 'BOM' },
+  productDesc: { type: String },
+
 }, {
   timestamps: true,
 });

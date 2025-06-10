@@ -2,12 +2,6 @@ import dbConnect from "@/lib/db";
 import SalesInvoice from "@/models/SalesInvoice";
 
 
-
-
-
-
-
-
 // GET /api/grn/[id]: Get a single GRN by ID
 export async function GET(req, { params }) {
   try {

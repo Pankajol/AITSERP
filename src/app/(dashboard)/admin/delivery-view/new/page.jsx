@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {Suspense} from "react";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import CustomerSearch from "@/components/CustomerSearch";
@@ -185,7 +186,17 @@ function formatDateForInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function DeliveryEditPage() {
+function DeliveryFormWrapper() {
+  return (
+<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <DeliveryEditPage />
+    </Suspense>
+  );
+}
+
+
+
+ function DeliveryEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
@@ -644,6 +655,8 @@ export default function DeliveryEditPage() {
     </div>
   );
 }
+
+export default DeliveryFormWrapper;
 
 
 

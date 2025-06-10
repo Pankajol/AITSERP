@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import SupplierSearch from "@/components/SupplierSearch"; // Updated import
@@ -186,7 +187,18 @@ function formatDateForInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function DebitNoteForm() {
+function DebitNoteFormWrapper() {
+  return (
+<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <DebitNoteForm />
+    </Suspense>
+  );
+}
+
+
+
+
+ function DebitNoteForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCopied, setIsCopied] = useState(false);
@@ -422,7 +434,17 @@ export default function DebitNoteForm() {
       </h1>
       {/* Supplier Section */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
+            <div>
+            <label className="block mb-2 font-medium">Supplier Code</label>
+            <input
+              type="text"
+              name="supplierCode"
+              value={formData.supplierCode || ""}
+              readOnly
+              className="w-full p-2 border rounded bg-gray-100"
+            />
+          </div>
           <div>
             {isCopied ? (
               <div>
@@ -443,16 +465,7 @@ export default function DebitNoteForm() {
               </div>
             )}
           </div>
-          <div>
-            <label className="block mb-2 font-medium">Supplier Code</label>
-            <input
-              type="text"
-              name="supplierCode"
-              value={formData.supplierCode || ""}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-100"
-            />
-          </div>
+        
           <div>
             <label className="block mb-2 font-medium">Supplier Contact</label>
             <input
@@ -475,7 +488,7 @@ export default function DebitNoteForm() {
           </div>
         </div>
         {/* Additional Debit Note Info */}
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select
@@ -675,5 +688,5 @@ export default function DebitNoteForm() {
   );
 }
 
-
+export default DebitNoteFormWrapper;
 

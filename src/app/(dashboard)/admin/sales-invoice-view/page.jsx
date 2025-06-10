@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import {
+  FaEdit,
+  FaTrash,
+  FaCopy,
+  FaEye,
+  FaEnvelope,
+  FaWhatsapp,
+  FaPrint,
+} from "react-icons/fa";
 
 export default function PurchaseOrderList() {
   const [orders, setOrders] = useState([]);
@@ -15,10 +23,10 @@ export default function PurchaseOrderList() {
       const res = await axios.get("/api/sales-invoice");
       // console.log("Fetched orders:", res.data.data);
       // Expecting an object with a success flag and a data array.
-    //   if (res.data.success) {
-    //     setOrders(res.data);
-    //   }
-    setOrders(res.data.data);
+      //   if (res.data.success) {
+      //     setOrders(res.data);
+      //   }
+      setOrders(res.data.data);
     } catch (error) {
       console.error("Error fetching purchase orders:", error);
     }
@@ -49,7 +57,7 @@ export default function PurchaseOrderList() {
     } else if (destination === "Invoice") {
       sessionStorage.setItem("purchaseInvoiceData", JSON.stringify(order));
       router.push("/admin/sales-invoice");
-    } 
+    }
     // else if (destination === "Debit-Note") {
     //   sessionStorage.setItem("debitNoteData", JSON.stringify(order));
     //   router.push("/admin/debit-note");
@@ -88,7 +96,6 @@ export default function PurchaseOrderList() {
               >
                 Invoice
               </button> */}
-            
             </div>
           </div>
         )}
@@ -113,7 +120,7 @@ export default function PurchaseOrderList() {
             <tr>
               <th className="py-3 px-4 border-b">Customer Code</th>
               <th className="py-3 px-4 border-b">Customer Name</th>
-              <th className="py-3 px-4 border-b">Posting Date</th>
+              <th className="py-3 px-4 border-b">Date </th>
               <th className="py-3 px-4 border-b">Status</th>
               <th className="py-3 px-4 border-b">Grand Total</th>
               <th className="py-3 px-4 border-b">Actions</th>
@@ -121,14 +128,27 @@ export default function PurchaseOrderList() {
           </thead>
           <tbody>
             {orders.map((order) => (
-              <tr key={order._id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 border-b text-center">{order.customerCode}</td>
-                <td className="py-3 px-4 border-b text-center">{order.customerName}</td>
+              <tr
+                key={order._id}
+                className="hover:bg-gray-50 transition-colors"
+              >
                 <td className="py-3 px-4 border-b text-center">
-                  {order.postingDate ? new Date(order.postingDate).toLocaleDateString() : ""}
+                  {order.customerCode}
                 </td>
-                <td className="py-3 px-4 border-b text-center">{order.status}</td>
-                <td className="py-3 px-4 border-b text-center">{order.grandTotal}</td>
+                <td className="py-3 px-4 border-b text-center">
+                  {order.customerName}
+                </td>
+                <td className="py-3 px-4 border-b text-center">
+                  {order.orderDate
+                    ? new Date(order.orderDate).toLocaleDateString()
+                    : ""}
+                </td>
+                <td className="py-3 px-4 border-b text-center">
+                  {order.status}
+                </td>
+                <td className="py-3 px-4 border-b text-center">
+                  {order.grandTotal}
+                </td>
                 <td className="py-3 px-4 border-b">
                   <div className="flex justify-center space-x-2">
                     {/* View Button */}
@@ -141,7 +161,9 @@ export default function PurchaseOrderList() {
                       </button>
                     </Link>
                     {/* Edit Button */}
-                    <Link href={`/admin/sales-invoice-view/new?editId=${order._id}`}>
+                    <Link
+                      href={`/admin/sales-invoice-view/new?editId=${order._id}`}
+                    >
                       <button
                         className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
                         title="Edit"
@@ -159,6 +181,35 @@ export default function PurchaseOrderList() {
                     </button>
                     {/* Copy To Dropdown */}
                     <CopyToDropdown handleCopyTo={handleCopyTo} order={order} />
+                    {/* Email Button */}
+                    <Link href={`/admin/email/${order._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
+                        title="Email"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    {/* WhatsApp Button */}
+                    <Link href={`/admin/whatsapp/${order._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="WhatsApp"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
+                    <Link
+                      href={`/admin/sales-invoice-print/${order._id}`}
+                     
+                    >
+                      <button
+                        className="flex items-center px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 transition duration-200"
+                        title="Print"
+                      >
+                        <FaPrint />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

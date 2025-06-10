@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import CustomerSearch from "@/components/CustomerSearch";
@@ -70,17 +71,26 @@ function formatDateForInput(date) {
 }
 
 // Helper function to fetch managedBy from the item master using itemId.
-// async function fetchManagedBy(itemId) {
-//   try {
-//     const res = await axios.get(`/api/items/${itemId}`);
-//     return res.data.managedBy; // Returns "batch" or another value.
-//   } catch (error) {
-//     console.error("Error fetching managedBy for item", itemId, error);
-//     return "";
-//   }
-// }
+async function fetchManagedBy(itemId) {
+  try {
+    const res = await axios.get(`/api/items/${itemId}`);
+    return res.data.managedBy; // Returns "batch" or another value.
+  } catch (error) {
+    console.error("Error fetching managedBy for item", itemId, error);
+    return "";
+  }
+}
 
-export default function SalesOrderForm() {
+
+function SalesOrderFormWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <SalesOrderForm />
+    </Suspense>
+  );
+}
+
+ function SalesOrderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
@@ -319,7 +329,7 @@ export default function SalesOrderForm() {
       </h1>
       {/* Customer Section */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             {isCopied ? (
               <div>
@@ -372,7 +382,7 @@ export default function SalesOrderForm() {
           </div>
         </div>
         {/* Additional Order Info */}
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select
@@ -518,3 +528,4 @@ export default function SalesOrderForm() {
     </div>
   );
 }
+export default SalesOrderFormWrapper;

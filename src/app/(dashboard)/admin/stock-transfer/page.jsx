@@ -2,8 +2,19 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function StockTransferPage() {
+
+function StockTransferPageWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <StockTransferPage />
+    </Suspense>
+  );
+}
+
+
+ function StockTransferPage() {
   const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get("orderId");
@@ -174,3 +185,5 @@ export default function StockTransferPage() {
     </div>
   );
 }
+
+export default StockTransferPageWrapper;

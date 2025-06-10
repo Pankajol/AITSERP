@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
@@ -53,7 +54,17 @@ function formatDateForInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function SalesOrderEditPage() {
+
+function SalesOrderFormWrapper() {
+  return (
+<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <SalesOrderEditPage />
+    </Suspense>
+  );
+}
+
+
+ function SalesOrderEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
@@ -387,6 +398,8 @@ export default function SalesOrderEditPage() {
     </div>
   );
 }
+
+export default SalesOrderFormWrapper;
 
 
 

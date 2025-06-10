@@ -3,8 +3,8 @@ import { toast } from 'react-toastify';
 
 function MultiBatchModal({ itemsbatch, onClose, onUpdateBatch }) {
   // Destructure item details from the itemsbatch prop
-  const { item , itemCode, warehouse, itemName, quantity: parentQuantity } = itemsbatch;
-  const effectiveItemId = item || itemCode;
+  const { item , warehouse, itemName, quantity: parentQuantity } = itemsbatch;
+  const effectiveItemId = item ;
   const effectiveWarehouseId = warehouse;
 
   const [inventory, setInventory] = useState(null);

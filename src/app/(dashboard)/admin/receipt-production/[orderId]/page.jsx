@@ -1,182 +1,542 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useRouter, useSearchParams } from "next/navigation";
+// 'use client';
 
-export default function ReceiptProductionPage() {
-  const router = useRouter();
-  const params = useSearchParams();
-  const orderId = params.get("orderId");
+// import React, { useState, useEffect, useCallback } from 'react';
+// import { useParams, useSearchParams } from 'next/navigation';
+// import axios from 'axios';
+// import { toast, ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
 
-  const [docNo, setDocNo] = useState("");
-  const [docDate, setDocDate] = useState("");
-  const [warehouse, setWarehouse] = useState("");
+// function BatchModal({ batches, setBatches, onClose }) {
+//   const handleBatchChange = (index, field, value) => {
+//     const updated = [...batches];
+//     updated[index][field] = value;
+//     setBatches(updated);
+//   };
+
+//   const addBatch = () => {
+//     setBatches([...batches, { batchNumber: '', quantity: 0, unitPrice: 0, expiryDate: '', manufacturer: '' }]);
+//   };
+
+//   const removeBatch = (index) => {
+//     const updated = [...batches];
+//     updated.splice(index, 1);
+//     setBatches(updated);
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+//       <div className="bg-white p-6 rounded shadow w-full max-w-2xl">
+//         <h2 className="text-lg font-semibold mb-4">Enter Batch Details</h2>
+//         <table className="w-full text-sm border mb-4">
+//           <thead className="bg-gray-100">
+//             <tr>
+//               <th className="border p-2">Batch No</th>
+//               <th className="border p-2">Qty</th>
+//               {/* <th className="border p-2">Price</th> */}
+//               <th className="border p-2">Expiry</th>
+//               <th className="border p-2">Manufacturer</th>
+//               <th className="border p-2">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {batches.map((batch, i) => (
+//               <tr key={i}>
+//                 <td className="border p-2">
+//                   <input
+//                     value={batch.batchNumber}
+//                     onChange={(e) => handleBatchChange(i, 'batchNumber', e.target.value)}
+//                     className="w-full border p-1 rounded"
+//                   />
+//                 </td>
+//                 <td className="border p-2">
+//                   <input
+//                     type="number"
+//                     value={batch.quantity}
+//                     onChange={(e) => handleBatchChange(i, 'quantity', Number(e.target.value))}
+//                     className="w-full border p-1 rounded"
+//                   />
+//                 </td>
+//                 {/* <td className="border p-2">
+//                   <input
+//                     type="number"
+//                     value={batch.unitPrice}
+//                     onChange={(e) => handleBatchChange(i, 'unitPrice', Number(e.target.value))}
+//                     className="w-full border p-1 rounded"
+//                   />
+//                 </td> */}
+//                 <td className="border p-2">
+//                   <input
+//                     type="date"
+//                     value={batch.expiryDate}
+//                     onChange={(e) => handleBatchChange(i, 'expiryDate', e.target.value)}
+//                     className="w-full border p-1 rounded"
+//                   />
+//                 </td>
+//                 <td className="border p-2">
+//                   <input
+//                     value={batch.manufacturer}
+//                     onChange={(e) => handleBatchChange(i, 'manufacturer', e.target.value)}
+//                     className="w-full border p-1 rounded"
+//                   />
+//                 </td>
+//                 <td className="border p-2">
+//                   <button onClick={() => removeBatch(i)} className="text-red-600">Remove</button>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//         <button onClick={addBatch} className="mr-4 px-4 py-1 bg-blue-500 text-white rounded">+ Add Batch</button>
+//         <button onClick={onClose} className="px-4 py-1 bg-green-600 text-white rounded">Done</button>
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default function ReceiptForProductionPage() {
+//   const params = useParams();
+//   const searchParams = useSearchParams();
+//   const orderId = params?.orderId;
+//   const qtyParam = Number(searchParams.get('qty')) || 1; // Quantity from URL param
+
+//   const [order, setOrder] = useState(null);
+//   const [docNo, setDocNo] = useState('');
+//   const [docDate, setDocDate] = useState('');
+//   const [warehouseOptions, setWarehouseOptions] = useState([]);
+//   const [sourceWarehouse, setSourceWarehouse] = useState('');
+//   const [batches, setBatches] = useState([]);
+//   const [showModal, setShowModal] = useState(false);
+//   const [unitPrice, setUnitPrice] = useState(0);
+//   const [loading, setLoading] = useState(true);
+
+//   // Load warehouses on mount
+//   useEffect(() => {
+//     axios.get('/api/warehouse')
+//       .then((r) => setWarehouseOptions(r.data))
+//       .catch(console.error);
+//   }, []);
+
+//   // Load order data and initialize
+//   useEffect(() => {
+//     if (!orderId) return;
+//     (async () => {
+//       try {
+//         const { data: ord } = await axios.get(`/api/production-orders/${orderId}`);
+//         setOrder(ord);
+
+//         const todayStr = new Date().toISOString().slice(0, 10);
+//         const docNoFormatted = `RP-${todayStr.replace(/-/g, '')}-${orderId.slice(-4)}`;
+//         setDocNo(docNoFormatted);
+//         setDocDate(todayStr);
+
+//         const sw = ord.warehouse?._id || ord.warehouse || '';
+//         setSourceWarehouse(sw);
+
+//         // Set unit price from product if available
+//         setUnitPrice(ord.rate || 0);
+//       } catch (e) {
+//         console.error(e);
+//       } finally {
+//         setLoading(false);
+//       }
+//     })();
+//   }, [orderId]);
+
+
+
+//   if (order?.bomId) {
+//   console.log(order.bomId.productNo, order.bomId.productDesc);
+// } else {
+//   console.log('No BOM details found');
+// }
+
+
+//   // Calculate total price live
+//   const totalPrice = (qtyParam * unitPrice).toFixed(2);
+
+//   const handleSubmit = useCallback(
+//     async (e) => {
+//       e.preventDefault();
+//       if (!order) return toast.error('Order not loaded');
+
+//       // Validate batches
+//       if (batches.length === 0) {
+//         toast.error('Please enter at least one batch');
+//         return;
+//       }
+
+//       // You might want to validate total batch qty matches qtyParam here
+
+//       const dataToSend = batches.map((batch) => {
+//         if (!batch.batchNumber || !batch.quantity || batch.quantity <= 0) {
+//           toast.error('Invalid batch data');
+//           return null;
+//         }
+//         return {
+//           productionOrderId: order._id,
+//           itemId: order?.bomId?.productNo ,
+//           sourceWarehouse,
+//           batchNumber: batch.batchNumber,
+//           quantity: batch.quantity,
+//           expiryDate: batch.expiryDate || null,
+//           manufacturer: batch.manufacturer || null,
+//           unitPrice: order.rate || null,
+//         };
+//       }).filter(Boolean);
+
+//       try {
+//         await axios.post(`/api/receipt-production/${order._id}?qty=${qtyParam}`, dataToSend);
+//         toast.success('Production receipt created');
+//       } catch (error) {
+//         toast.error(error?.response?.data?.message || 'Failed to create receipt');
+//       }
+//     },
+//     [order, qtyParam, batches, sourceWarehouse, unitPrice]
+//   );
+
+//   if (loading) return <p>Loading...</p>;
+//   if (!order) return <p>Production order not found</p>;
+
+//   return (
+//     <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded">
+//       <ToastContainer />
+//       <h1 className="text-2xl font-semibold mb-6">Receipt for Production</h1>
+
+//       <form onSubmit={handleSubmit}>
+//         <div className="mb-6 flex flex-wrap gap-4 items-center">
+//           <input readOnly value={docNo} className="border p-2 bg-gray-100 rounded w-48" title="Document No" />
+
+//           <input
+//             type="date"
+//             value={docDate}
+//             onChange={(e) => setDocDate(e.target.value)}
+//             className="border p-2 rounded w-48"
+//             title="Document Date"
+//           />
+
+//           <select
+//             value={sourceWarehouse}
+//             onChange={(e) => setSourceWarehouse(e.target.value)}
+//             required
+//             className="border p-2 rounded w-48"
+//             title="Select Warehouse"
+//           >
+//             <option value="">-- select warehouse --</option>
+//             {warehouseOptions.map((w) => (
+//               <option key={w._id} value={w._id}>{w.warehouseName}</option>
+//             ))}
+//           </select>
+//         </div>
+
+//         <table className="w-full border-collapse border border-gray-300 mb-6">
+//           <thead className="bg-gray-100">
+//             <tr>
+//               <th className="border border-gray-300 p-2">Product No</th>
+//               <th className="border border-gray-300 p-2">Product Desc</th>
+//               <th className="border border-gray-300 p-2">Qty</th>
+//               <th className="border border-gray-300 p-2">Unit Price</th>
+//               <th className="border border-gray-300 p-2">Total Price</th>
+//               <th className="border border-gray-300 p-2">Batch</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             <tr>
+//               <td className="border border-gray-300 p-2 text-center">{order?.bomId?.productNo || 'N/A'}</td>
+//               <td className="border border-gray-300 p-2">{order?.bomId?.productDesc || 'N/A'}</td>
+//               <td className="border border-gray-300 p-2 text-center">{qtyParam}</td>
+//               <td className="border border-gray-300 p-2 text-right">
+//                 <input
+//                   type="number"
+//                   min={0}
+//                   step="0.01"
+//                   value={order?.rate}
+//                   onChange={(e) => setUnitPrice(Number(e.target.value))}
+//                   className="w-full text-right border rounded p-1"
+//                   title="rate"
+//                 />
+//               </td>
+//               <td className="border border-gray-300 p-2 text-right">₹{totalPrice}</td>
+//               <td className="border border-gray-300 p-2 text-center">
+//                 <button
+//                   type="button"
+//                   onClick={() => setShowModal(true)}
+//                   className="px-3 py-1 bg-blue-600 text-white rounded"
+//                   title="Enter batch details"
+//                 >
+//                   Enter Batches
+//                 </button>
+//               </td>
+//             </tr>
+//           </tbody>
+//         </table>
+
+//         <button
+//           type="submit"
+//           className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+//         >
+//           Save Receipt
+//         </button>
+//       </form>
+
+//       {showModal && (
+//         <BatchModal
+//           batches={batches}
+//           setBatches={setBatches}
+//           onClose={() => setShowModal(false)}
+//         />
+//       )}
+//     </div>
+//   );
+// }
+
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+function BatchModal({ batches, setBatches, onClose }) {
+  const handleBatchChange = (index, field, value) => {
+    const updated = [...batches];
+    updated[index][field] = value;
+    setBatches(updated);
+  };
+
+  const addBatch = () => {
+    setBatches([...batches, { batchNumber: '', quantity: 0, expiryDate: '', manufacturer: '' }]);
+  };
+
+  const removeBatch = (index) => {
+    const updated = [...batches];
+    updated.splice(index, 1);
+    setBatches(updated);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded shadow w-full max-w-2xl">
+        <h2 className="text-lg font-semibold mb-4">Enter Batch Details</h2>
+        <table className="w-full text-sm border mb-4">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border p-2">Batch No</th>
+              <th className="border p-2">Qty</th>
+              <th className="border p-2">Expiry</th>
+              <th className="border p-2">Manufacturer</th>
+              <th className="border p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {batches.map((batch, i) => (
+              <tr key={i}>
+                <td className="border p-2">
+                  <input
+                    value={batch.batchNumber}
+                    onChange={(e) => handleBatchChange(i, 'batchNumber', e.target.value)}
+                    className="w-full border p-1 rounded"
+                  />
+                </td>
+                <td className="border p-2">
+                  <input
+                    type="number"
+                    value={batch.quantity}
+                    onChange={(e) => handleBatchChange(i, 'quantity', Number(e.target.value))}
+                    className="w-full border p-1 rounded"
+                  />
+                </td>
+                <td className="border p-2">
+                  <input
+                    type="date"
+                    value={batch.expiryDate}
+                    onChange={(e) => handleBatchChange(i, 'expiryDate', e.target.value)}
+                    className="w-full border p-1 rounded"
+                  />
+                </td>
+                <td className="border p-2">
+                  <input
+                    value={batch.manufacturer}
+                    onChange={(e) => handleBatchChange(i, 'manufacturer', e.target.value)}
+                    className="w-full border p-1 rounded"
+                  />
+                </td>
+                <td className="border p-2">
+                  <button onClick={() => removeBatch(i)} className="text-red-600">Remove</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button onClick={addBatch} className="mr-4 px-4 py-1 bg-blue-500 text-white rounded">+ Add Batch</button>
+        <button onClick={onClose} className="px-4 py-1 bg-green-600 text-white rounded">Done</button>
+      </div>
+    </div>
+  );
+}
+
+export default function ReceiptForProductionPage() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const orderId = params?.orderId;
+  const qtyParam = Number(searchParams.get('qty')) || 1;
+
+  const [order, setOrder] = useState(null);
+  const [docNo, setDocNo] = useState('');
+  const [docDate, setDocDate] = useState('');
   const [warehouseOptions, setWarehouseOptions] = useState([]);
-  const [rows, setRows] = useState([]);
-
-
+  const [sourceWarehouse, setSourceWarehouse] = useState('');
+  const [batches, setBatches] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // axios.get("/api/bom").then(res => setBoms(res.data));
-    // axios.get("/api/items").then(res => setAllItems(res.data));
-    axios.get("/api/warehouse").then(res =>
-      setWarehouseOptions(
-        res.data.map(w => ({ value: w._id, label: w.warehouseName }))
-      )
-
-    );
+    axios.get('/api/warehouse')
+      .then((r) => setWarehouseOptions(r.data))
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (!orderId) return;
-    axios
-      .get(`/api/production-orders/${orderId}`)
-      .then((res) => {
-        const o = res.data;
-        setDocNo(o.documentNo || "");
-        setDocDate(o.documentDate?.substr(0, 10) || "");
-        setWarehouse(o.warehouse?.warehouseName || "");
-        setRows(
-          o.items.map((it) => ({
-            itemCode: it.itemCode._id ?? it.itemCode,
-            itemName: it.itemCode.itemName,
-            qty: it.qty,
-            price: it.price ?? 0,
-          }))
-        );
-      })
-      .catch(console.error);
+    (async () => {
+      try {
+        const { data: ord } = await axios.get(`/api/production-orders/${orderId}`);
+        setOrder(ord);
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const docNoFormatted = `RP-${todayStr.replace(/-/g, '')}-${orderId.slice(-4)}`;
+        setDocNo(docNoFormatted);
+        setDocDate(todayStr);
+
+        const sw = ord.warehouse?._id || ord.warehouse || '';
+        setSourceWarehouse(sw);
+
+        setUnitPrice(ord.rate || 0);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [orderId]);
 
-  const onChange = (idx, field, val) => {
-    setRows((prev) => {
-      const next = [...prev];
-      next[idx][field] = val;
-      return next;
-    });
-  };
+  const totalPrice = (qtyParam * unitPrice).toFixed(2);
 
-  const addRow = () =>
-    setRows((prev) => [
-      ...prev,
-      { itemCode: "", itemName: "", qty: "", price: "" },
-    ]);
+const handleSubmit = useCallback(
+  async (e) => {
+    e.preventDefault();
+    if (!order) return toast.error('Order not loaded');
 
-  const rowTotal = (r) => (Number(r.qty) * Number(r.price)) || 0;
-  const grandTotal = () => rows.reduce((sum, r) => sum + rowTotal(r), 0);
+    if (batches.length === 0) {
+      toast.error('Please enter at least one batch');
+      return;
+    }
 
-  const save = () => {
-    axios
-      .post(`/api/receipt-production/${orderId}`, {
-        id: orderId,
-        documentNo: docNo,
-        documentDate: docDate,
-        warehouse,
-        items: rows.map((r) => ({
-          itemCode: r.itemCode,
-          qty: r.qty,
-          price: r.price,
-        })),
-      })
-      .then(() => router.push("/receipt-production"))
-      .catch(console.error);
-  };
+    // Validate batch data before sending
+    for (const batch of batches) {
+      if (!batch.batchNumber || !batch.quantity || batch.quantity <= 0) {
+        toast.error('Invalid batch data');
+        return;
+      }
+    }
+
+    // Prepare data in expected format
+  const dataToSend = [
+  {
+    itemId: order?.bomId?._id,
+    productNo: order?.bomId?._id,
+    productDesc: order?.bomId?.productDesc,
+    quantity: qtyParam,
+    sourceWarehouse,
+    warehouseName: warehouseOptions.find(w => w._id === sourceWarehouse)?.warehouseName || '',
+    docNo,
+    docDate,
+    totalPrice: Number((qtyParam * unitPrice).toFixed(2)),
+    unitPrice: unitPrice || 0,
+    batches: batches.map((batch) => ({
+      batchNumber: batch.batchNumber,
+      quantity: batch.quantity,
+      expiryDate: batch.expiryDate || null,
+      manufacturer: batch.manufacturer || null,
+    })),
+  }
+];
+
+
+    try {
+      await axios.post(`/api/receipt-production/${order._id}?qty=${qtyParam}`, dataToSend);
+      toast.success('Production receipt created');
+      router.push("/admin/productionorders-list-view");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to create receipt');
+    }
+  },
+  [order, qtyParam, batches, sourceWarehouse, unitPrice, docNo, docDate]
+);
+
+
+  if (loading) return <p>Loading...</p>;
+  if (!order) return <p>Production order not found</p>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white shadow rounded">
-      <h1 className="text-xl font-bold mb-4">Receipt from Production</h1>
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <label>
-          Document No<br />
-          <input
-            className="border p-2 w-full"
-            value={docNo}
-            onChange={(e) => setDocNo(e.target.value)}
-          />
-        </label>
-        <label>
-          Document Date<br />
-          <input
-            type="date"
-            className="border p-2 w-full"
-            value={docDate}
-            onChange={(e) => setDocDate(e.target.value)}
-          />
-        </label>
-        <label>
-          Warehouse  
-          <select
-            className="w-full border p-2 rounded"
-            value={warehouse}
-            onChange={e => setWarehouse(e.target.value)}
-          >
+    <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded">
+      <ToastContainer />
+      <h1 className="text-2xl font-semibold mb-6">Receipt for Production</h1>
+
+      <form onSubmit={handleSubmit}>
+        <div className="mb-6 flex flex-wrap gap-4 items-center">
+          <input readOnly value={docNo} className="border p-2 bg-gray-100 rounded w-48" />
+          <input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} className="border p-2 rounded w-48" />
+          <select value={sourceWarehouse} onChange={(e) => setSourceWarehouse(e.target.value)} required className="border p-2 rounded w-48">
             <option value="">-- select warehouse --</option>
-            {warehouseOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+            {warehouseOptions.map((w) => (
+              <option key={w._id} value={w._id}>{w.warehouseName}</option>
             ))}
-          </select>    
-          </label>
-      </div>
+          </select>
+        </div>
 
-      <table className="w-full table-auto border-collapse text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Item Code</th>
-            <th className="border p-2">Item Name</th>
-            <th className="border p-2">Qty</th>
-            <th className="border p-2">Price</th>
-            <th className="border p-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className="hover:bg-gray-50">
-              <td className="border p-1">{r.itemCode}</td>
-              <td className="border p-1">{r.itemName}</td>
-              <td className="border p-1">
-                <input
-                  type="number"
-                  className="w-full"
-                  value={r.qty}
-                  onChange={(e) => onChange(i, "qty", e.target.value)}
-                />
-              </td>
-              <td className="border p-1">
-                <input
-                  type="number"
-                  className="w-full"
-                  value={r.price}
-                  onChange={(e) => onChange(i, "price", e.target.value)}
-                />
-              </td>
-              <td className="border p-1 text-right">{rowTotal(r)}</td>
+        <table className="w-full border-collapse border border-gray-300 mb-6">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border p-2">Product No</th>
+              <th className="border p-2">Product Desc</th>
+              <th className="border p-2">Qty</th>
+              <th className="border p-2">Unit Price</th>
+              <th className="border p-2">Total Price</th>
+              <th className="border p-2">Batch</th>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={4} className="border-t p-2 text-right font-semibold">
-              Grand Total
-            </td>
-            <td className="border-t p-2 text-right font-semibold">
-              {grandTotal()}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border p-2 text-center">  {order?.bomId?.productNo?.itemCode || 'N/A'}</td>
+              <td className="border p-2">{order?.bomId?.productDesc || 'N/A'}</td>
+              <td className="border p-2 text-center">{qtyParam}</td>
+              <td className="border p-2 text-right">
+                <input type="number" min={0} step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(Number(e.target.value))} className="w-full text-right border rounded p-1" />
+              </td>
+              <td className="border p-2 text-right">₹{totalPrice}</td>
+              <td className="border p-2 text-center">
+                <button type="button" onClick={() => setShowModal(true)} className="px-3 py-1 bg-blue-600 text-white rounded">
+                  Enter Batches
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-      <div className="mt-2 italic text-center">Purchase Price</div>
+        <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+          Save Receipt
+        </button>
+      </form>
 
-      <div className="mt-4">
-        <button onClick={addRow} className="px-4 py-2 bg-blue-500 text-white rounded">
-          + Add Row
-        </button>
-        <button onClick={save} className="ml-2 px-4 py-2 bg-green-600 text-white rounded">
-          Save
-        </button>
-      </div>
+      {showModal && (
+        <BatchModal
+          batches={batches}
+          setBatches={setBatches}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 }

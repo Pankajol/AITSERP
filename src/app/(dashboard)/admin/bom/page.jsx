@@ -241,14 +241,17 @@
 
 
 
+
+
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import Select from "react-select";
 
 export default function BOMPage() {
   // Product & form state
-  const [productNo, setProductNo] = useState("LM4029");
-  const [productDesc, setProductDesc] = useState("LeMon 4029 Printer");
+  const [productNo, setProductNo] = useState("");
+  const [productDesc, setProductDesc] = useState("");
   const [warehouse, setWarehouse] = useState("");
   const [priceList, setPriceList] = useState("");
   const [bomType, setBomType] = useState("Production");
@@ -271,44 +274,46 @@ export default function BOMPage() {
 
   // Fetch master items, warehouses, price lists on mount
   useEffect(() => {
-    axios.get('/api/items')
-      .then(res => setApiItems(res.data || []))
-      .catch(err => console.error('Error fetching items:', err));
-    axios.get('/api/warehouse')
-      .then(res => setWarehouses(res.data || []))
-      .catch(err => console.error('Error fetching warehouses:', err));
-    axios.get('/api/price-list')
-      .then(res => setPriceLists(res.data || []))
-      .catch(err => console.error('Error fetching price lists:', err));
+    axios.get('/api/items').then(res => setApiItems(res.data || [])).catch(console.error);
+    axios.get('/api/warehouse').then(res => setWarehouses(res.data || [])).catch(console.error);
+    axios.get('/api/price-list').then(res => setPriceLists(res.data || [])).catch(console.error);
   }, []);
 
+
+  // Create options for React Select
+  const productOptions = apiItems.map(item => ({
+    value: item._id,
+    label: `${item.itemCode} - ${item.itemName}`,
+  }));
   // Filter items by code or name
   const filteredItems = apiItems.filter(item => {
-    const code = (item.itemCode ?? "").toLowerCase();
-    const name = (item.itemName ?? "").toLowerCase();
     const txt = searchText.toLowerCase();
-    return code.includes(txt) || name.includes(txt);
+    return (
+      (item.itemCode ?? "").toLowerCase().includes(txt) ||
+      (item.itemName ?? "").toLowerCase().includes(txt)
+    );
   });
 
   // Add selected item to BOM
   const handleAddItem = () => {
     const item = apiItems.find(i => i._id === selectedItemId);
     if (!item) return;
-    if (bomItems.some(i => i._id === selectedItemId)) {
-      alert('Item already added!');
-      return;
-    }
-    setBomItems([...bomItems, {
-      _id: item._id,
-      itemCode: item.itemCode,
-      itemName: item.itemName,
-      quantity: 1,
-      warehouse,
-      issueMethod: 'Backflush',
-      priceList,
-      unitPrice: item.unitPrice ?? 0,
-      total: item.unitPrice ?? 0
-    }]);
+    if (bomItems.some(i => i.item === selectedItemId)) return alert('Item already added!');
+
+    setBomItems(prev => [
+      ...prev,
+      {
+        item: item._id,
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        quantity: 1,
+        warehouse,
+        issueMethod: 'Backflush',
+        priceList,
+        unitPrice: item.unitPrice ?? 0,
+        total: item.unitPrice ?? 0
+      }
+    ]);
     setSelectedItemId('');
     setSearchText('');
   };
@@ -321,198 +326,105 @@ export default function BOMPage() {
     setBomItems(arr);
   };
 
+  // Update warehouse per-row
+  const handleWarehouseChange = (idx, wh) => {
+    const arr = [...bomItems];
+    arr[idx].warehouse = wh;
+    setBomItems(arr);
+  };
+
+  // Delete row
+  const handleDelete = (idx) => {
+    const arr = [...bomItems];
+    arr.splice(idx, 1);
+    setBomItems(arr);
+  };
+
   // Sum of totals
   const totalSum = bomItems.reduce((acc, i) => acc + (i.total ?? 0), 0);
 
-
+  // Save BOM to backend
   const handleSaveBOM = async () => {
     try {
-      const payload = {
-        productNo,
-        productDesc,
-        warehouse,
-        priceList,
-        bomType,
-        xQuantity,
-        distRule,
-        project,
-        items: bomItems,
-        total: totalSum
-      };
-      const response = await axios.post('/api/bom', payload);
+      const payload = { productNo, productDesc, warehouse, priceList, bomType, xQuantity, distRule, project, items: bomItems, totalSum };
+      await axios.post('/api/bom', payload);
       alert('BOM saved successfully!');
-      // Optional: reset form
-      // setBomItems([]); setProductNo(""); ...
     } catch (err) {
       console.error('Error saving BOM:', err);
-      alert('Failed to save BOM. Check console for details.');
+      alert('Failed to save BOM.');
     }
   };
-  
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white shadow-lg rounded">
       <h2 className="text-2xl font-semibold mb-6">Bill of Materials</h2>
 
-      {/* Header Section */}
+      {/* Header */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Left: Product Info & Warehouse/Price List */}
+        {/* Left */}
         <div className="space-y-4">
-          {/* <div>
+          <div>
             <label className="block text-sm font-medium">Product No.</label>
-            <input
-              value={productNo}
-              onChange={e => setProductNo(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
-          </div> */}
-
-<div>
-  <label className="block text-sm font-medium">Product No.</label>
-  <input
-    type="text"
-    placeholder="Search product..."
-    value={productNo}
-    onChange={(e) => setProductNo(e.target.value)}
-    className="w-full border p-2 rounded"
-    onFocus={() => setShowProductSuggestions(true)}
-  />
-  {productNo && showProductSuggestions && (
-    <ul className="border bg-white max-h-48 overflow-y-auto rounded shadow absolute z-10 w-full">
-      {apiItems
-        .filter(item => {
-          const txt = productNo.toLowerCase();
-          return (
-            item.itemCode?.toLowerCase().includes(txt) ||
-            item.itemName?.toLowerCase().includes(txt)
-          );
-        })
-        .map(item => (
-          <li
-            key={item._id}
-            className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-            onClick={() => {
-              setProductNo(item.itemCode);
-              setProductDesc(item.itemName);
-              setShowProductSuggestions(false);
-            }}
-          >
-            {item.itemCode} - {item.itemName}
-          </li>
-        ))}
-    </ul>
-  )}
-</div>
-
-
+                 <Select
+        options={productOptions}
+        onChange={(selected) => setProductNo(selected?.value || "")}
+        isClearable
+        placeholder="Search or select product"
+      />
+        
+          </div>
           <div>
             <label className="block text-sm font-medium">Product Description</label>
-            <input
-              value={productDesc}
-              onChange={e => setProductDesc(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
+            <input value={productDesc} onChange={e => setProductDesc(e.target.value)} className="w-full border p-2 rounded" />
           </div>
           <div>
             <label className="block text-sm font-medium">Warehouse</label>
-            <select
-              value={warehouse}
-              onChange={e => setWarehouse(e.target.value)}
-              className="w-full border p-2 rounded"
-            >
-              <option value="">Select Warehouse</option>
-              {warehouses.map(w => (
-                <option key={w._id} value={w._id}>
-                  {w.warehouseCode} - {w.warehouseName}
-                </option>
-              ))}
+            <select value={warehouse} onChange={e => setWarehouse(e.target.value)} className="w-full border p-2 rounded">
+              <option value="">Select Global Warehouse</option>
+              {warehouses.map(w => <option key={w._id} value={w._id}>{w.warehouseCode} – {w.warehouseName}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium">Price List</label>
-            <select
-              value={priceList}
-              onChange={e => setPriceList(e.target.value)}
-              className="w-full border p-2 rounded"
-            >
-              <option value="">Select Price List</option>
-              {priceLists.map(p => (
-                <option key={p._id} value={p._id}>{p.name}</option>
-              ))}
+            <select value={priceList} onChange={e => setPriceList(e.target.value)} className="w-full border p-2 rounded">
+              <option value="">Select Global Price List</option>
+              {priceLists.map(p => <option key={p._1d} value={p._id}>{p.name}</option>)}
             </select>
           </div>
         </div>
-
-        {/* Right: Extra Fields */}
+        {/* Right */}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium">BOM Type</label>
-            <select
-              value={bomType}
-              onChange={e => setBomType(e.target.value)}
-              className="w-full border p-2 rounded"
-            >
-              <option value="Production">Production</option>
-              <option value="Sales">Sales</option>
-              <option value="Template">Template</option>
+            <select value={bomType} onChange={e => setBomType(e.target.value)} className="w-full border p-2 rounded">
+              <option>Production</option>
+              <option>Sales</option>
+              <option>Template</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium">X Quantity</label>
-            <input
-              type="number"
-              min={1}
-              value={xQuantity}
-              onChange={e => setXQuantity(+e.target.value)}
-              className="w-full border p-2 rounded"
-            />
+            <input type="number" min={1} value={xQuantity} onChange={e => setXQuantity(+e.target.value)} className="w-full border p-2 rounded" />
           </div>
           <div>
             <label className="block text-sm font-medium">Distribution Rule</label>
-            <input
-              value={distRule}
-              onChange={e => setDistRule(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
+            <input value={distRule} onChange={e => setDistRule(e.target.value)} className="w-full border p-2 rounded" />
           </div>
           <div>
             <label className="block text-sm font-medium">Project</label>
-            <input
-              value={project}
-              onChange={e => setProject(e.target.value)}
-              className="w-full border p-2 rounded"
-            />
+            <input value={project} onChange={e => setProject(e.target.value)} className="w-full border p-2 rounded" />
           </div>
         </div>
       </div>
 
-      {/* Search & Add Item */}
+      {/* Search & Add */}
       <div className="flex justify-center mb-6">
-        <input
-          type="text"
-          placeholder="Search item by code or name..."
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          className="border p-2 rounded-l flex-1 max-w-md"
-        />
-        <select
-          value={selectedItemId}
-          onChange={e => setSelectedItemId(e.target.value)}
-          className="border-t border-b p-2"
-        >
+        <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)} className="border p-2 rounded-l flex-1 max-w-md" placeholder="Search item..." />
+        <select value={selectedItemId} onChange={e => setSelectedItemId(e.target.value)} className="border-t border-b p-2">
           <option value="">Select Item</option>
-          {filteredItems.map(item => (
-            <option key={item._id} value={item._id}>
-              {item.itemCode} - {item.itemName}
-            </option>
-          ))}
+          {filteredItems.map(i => <option key={i._id} value={i._id}>{i.itemCode} – {i.itemName}</option>)}
         </select>
-        <button
-          onClick={handleAddItem}
-          className="bg-blue-600 text-white px-4 py-2 rounded-r"
-        >
-          Add
-        </button>
+        <button onClick={handleAddItem} className="bg-blue-600 text-white px-4 py-2 rounded-r">Add</button>
       </div>
 
       {/* BOM Table */}
@@ -520,53 +432,52 @@ export default function BOMPage() {
         <thead className="bg-gray-100">
           <tr>
             <th className="border p-2">#</th>
-            <th className="border p-2">Item Code</th>
-            <th className="border p-2">Item Name</th>
+            <th className="border p-2">Code</th>
+            <th className="border p-2">Name</th>
             <th className="border p-2">Qty</th>
             <th className="border p-2">Warehouse</th>
             <th className="border p-2">Issue Method</th>
             <th className="border p-2">Price List</th>
             <th className="border p-2">Unit Price</th>
             <th className="border p-2">Total</th>
+            <th className="border p-2">Action</th>
           </tr>
         </thead>
         <tbody>
           {bomItems.map((item, idx) => (
-            <tr key={item._id}>
+            <tr key={item.item}>                                    
               <td className="border p-2 text-center">{idx + 1}</td>
               <td className="border p-2">{item.itemCode}</td>
               <td className="border p-2">{item.itemName}</td>
-              <td className="border p-2 w-20">
-                <input
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={e => handleQtyChange(idx, +e.target.value)}
-                  className="w-full border rounded px-1"
-                />
+              <td className="border p-2 text-center">
+                <input type="number" min={1} value={item.quantity} onChange={e => handleQtyChange(idx, +e.target.value)} className="w-16 border p-1 rounded text-center" />
               </td>
-              <td className="border p-2">{item.warehouseName}</td>
-              <td className="border p-2">{item.issueMethod}</td>
-              <td className="border p-2">{item.priceList}</td>
-              <td className="border p-2 text-right">{(item.unitPrice ?? 0).toFixed(2)}</td>
-              <td className="border p-2 text-right">{(item.total ?? 0).toFixed(2)}</td>
+              <td className="border p-2">
+                <select value={item.warehouse} onChange={e => handleWarehouseChange(idx, e.target.value)} className="w-full border p-1 rounded">
+                  <option value="">Select Warehouse</option>
+                  {warehouses.map(w => <option key={w._id} value={w._id}>{w.warehouseCode} – {w.warehouseName}</option>)}
+                </select>
+              </td>
+              <td className="border p-2 text-center">{item.issueMethod}</td>
+              <td className="border p-2 text-center">{priceLists.find(p => p._id === item.priceList)?.name || 'N/A'}</td>
+              <td className="border p-2 text-right">{item.unitPrice.toFixed(2)}</td>
+              <td className="border p-2 text-right">{item.total.toFixed(2)}</td>
+              <td className="border p-2 text-center"><button onClick={() => handleDelete(idx)} className="text-red-600 hover:underline">Delete</button></td>
             </tr>
           ))}
+        </tbody>
+        <tfoot>
           <tr className="bg-gray-100 font-semibold">
             <td colSpan={8} className="border p-2 text-right">Total:</td>
             <td className="border p-2 text-right">{totalSum.toFixed(2)}</td>
+            <td className="border p-2"></td>
           </tr>
-        </tbody>
+        </tfoot>
       </table>
 
-      {/* Action Buttons */}
+      {/* Actions */}
       <div className="flex justify-end gap-4">
-      <button
-    onClick={handleSaveBOM}
-    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-  >
-    Save BOM
-  </button>
+        <button onClick={handleSaveBOM} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Save BOM</button>
         <button className="bg-gray-400 text-white px-6 py-2 rounded">Cancel</button>
       </div>
     </div>

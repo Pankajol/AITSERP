@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCopy, FaEye , FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function SalesDeliveryList() {
   const [orders, setOrders] = useState([]);
@@ -114,7 +114,7 @@ export default function SalesDeliveryList() {
             <tr>
               <th className="py-3 px-4 border-b">Customer Code</th>
               <th className="py-3 px-4 border-b">Customer Name</th>
-              <th className="py-3 px-4 border-b">Posting Date</th>
+              <th className="py-3 px-4 border-b">Order Date</th>
               <th className="py-3 px-4 border-b">Remarks</th>
               <th className="py-3 px-4 border-b">Grand Total</th>
               <th className="py-3 px-4 border-b">Actions</th>
@@ -126,7 +126,7 @@ export default function SalesDeliveryList() {
                 <td className="py-3 px-4 border-b text-center">{order.customerCode}</td>
                 <td className="py-3 px-4 border-b text-center">{order.customerName}</td>
                 <td className="py-3 px-4 border-b text-center">
-                  {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : ""}
+                  {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : ""}
                 </td>
                 <td className="py-3 px-4 border-b text-center">{order.remarks}</td>
                 <td className="py-3 px-4 border-b text-center">{order.grandTotal}</td>
@@ -160,6 +160,24 @@ export default function SalesDeliveryList() {
                     </button>
                     {/* Copy To Dropdown */}
                     <CopyToDropdown handleCopyTo={handleCopyTo} order={order} />
+                    {/* Email Button */}  
+                    <Link href={`/admin/delivery-view/${order._id}/send-email`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition duration-200"
+                        title="Send Email"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    {/* WhatsApp Button */}
+                    <Link href={`/admin/delivery-view/${order._id}/send-whatsapp`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="Send WhatsApp"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

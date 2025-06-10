@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import CustomerSearch from "@/components/CustomerSearch";
@@ -71,7 +72,17 @@ function formatDateForInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function DeliveryForm() {
+function DeliveryFormWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <DeliveryForm />
+    </Suspense>
+  );
+}
+
+
+
+ function DeliveryForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCopied, setIsCopied] = useState(false);
@@ -341,7 +352,17 @@ export default function DeliveryForm() {
       </h1>
       {/* Customer Section */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
+           <div>
+            <label className="block mb-2 font-medium">Customer Code</label>
+            <input
+              type="text"
+              name="customerCode"
+              value={formData.customerCode || ""}
+              readOnly
+              className="w-full p-2 border rounded bg-gray-100"
+            />
+          </div>
           <div>
             {isCopied ? (
               <div>
@@ -362,16 +383,7 @@ export default function DeliveryForm() {
               </div>
             )}
           </div>
-          <div>
-            <label className="block mb-2 font-medium">Customer Code</label>
-            <input
-              type="text"
-              name="customerCode"
-              value={formData.customerCode || ""}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-100"
-            />
-          </div>
+         
           <div>
             <label className="block mb-2 font-medium">Contact Person</label>
             <input
@@ -394,7 +406,7 @@ export default function DeliveryForm() {
           </div>
         </div>
         {/* Additional Order Info */}
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select
@@ -589,4 +601,7 @@ export default function DeliveryForm() {
     </div>
   );
 }
+
+
+export default DeliveryFormWrapper;
 

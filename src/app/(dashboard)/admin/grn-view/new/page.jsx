@@ -20,6 +20,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import axios from "axios";
 import SupplierSearch from "@/components/SupplierSearch";
 import ItemSection from "@/components/ItemSection";
@@ -85,7 +86,18 @@ function formatDateForInput(dateStr) {
   return !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
 }
 
-export default function GRNFormEdit() {
+function GRNFormWrapper() {
+  return (
+<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <GRNFormEdit />
+    </Suspense>
+  );
+}
+
+
+
+
+ function GRNFormEdit() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
@@ -940,6 +952,9 @@ export default function GRNFormEdit() {
     </div>
   );
 }
+
+
+export default GRNFormWrapper;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 

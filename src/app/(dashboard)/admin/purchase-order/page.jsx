@@ -432,7 +432,11 @@ export default function PurchaseOrderForm() {
       <ToastContainer />
       <h1 className="text-2xl font-bold mb-4">Purchase Order Form</h1>
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
+            <div>
+            <label className="block mb-2 font-medium">Supplier Code</label>
+            <input type="text" name="supplierCode" value={orderData.supplierCode || ""} readOnly className="w-full p-2 border rounded bg-gray-100" />
+          </div>
           {isCopied ? (
             <div>
               <label className="block mb-2 font-medium">Supplier Name</label>
@@ -451,10 +455,7 @@ export default function PurchaseOrderForm() {
               <SupplierSearch onSelectSupplier={handleSupplierSelect} />
             </div>
           )}
-          <div>
-            <label className="block mb-2 font-medium">Supplier Code</label>
-            <input type="text" name="supplierCode" value={orderData.supplierCode || ""} readOnly className="w-full p-2 border rounded bg-gray-100" />
-          </div>
+        
           <div>
             <label className="block mb-2 font-medium">Contact Person</label>
             <input type="text" name="contactPerson" value={orderData.contactPerson || ""} readOnly className="w-full p-2 border rounded bg-gray-100" />
@@ -464,7 +465,7 @@ export default function PurchaseOrderForm() {
             <input type="text" name="refNumber" value={orderData.refNumber || ""} onChange={handleInputChange} className="w-full p-2 border rounded" />
           </div>
         </div>
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select name="status" value={orderData.status || ""} onChange={handleInputChange} className="w-full p-2 border rounded">

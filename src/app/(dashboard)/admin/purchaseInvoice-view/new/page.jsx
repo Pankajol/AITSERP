@@ -384,6 +384,7 @@
 //////////////////////////////////////////////////////////////////////
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import axios from "axios";
 import SupplierSearch from "@/components/SupplierSearch";
@@ -478,7 +479,18 @@ function mergeFormData(record) {
   };
 }
 
-export default function PurchaseInvoiceEditPage() {
+
+function PurchaseInvoiceFormWrapper() {
+  return (
+<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <PurchaseInvoiceEditPage />
+    </Suspense>
+  );
+}
+
+
+
+ function PurchaseInvoiceEditPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -1085,6 +1097,7 @@ export default function PurchaseInvoiceEditPage() {
   );
 }
 
+export default PurchaseInvoiceFormWrapper;
 //////////////////////////////////////////////////////////////////////
 
 // "use client";

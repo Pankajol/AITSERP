@@ -228,7 +228,7 @@ const ItemSection = ({ items, onItemChange, onAddItem }) => {
       <div className="max-w-[120px] ">
         <table className="min-w-full table-auto border-collapse">
           <thead>
-            <tr className="bg-gray-200">
+            <tr className="bg-blue-500">
               <th className="border p-2 whitespace-nowrap">Item Code</th>
               <th className="border p-2 whitespace-nowrap">Item Name</th>
               <th className="border p-2 whitespace-nowrap">Item Description</th>

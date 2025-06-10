@@ -1,4 +1,4 @@
-import  dbConnect from "@/lib/dbConnect";
+import  dbConnect from "@/lib/db";
 import Warehouse from "@/models/warehouseModels";
 
 // ✅ GET WAREHOUSE BY CODE

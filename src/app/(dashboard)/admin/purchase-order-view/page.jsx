@@ -180,7 +180,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCopy, FaEye, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function PurchaseOrderList() {
   const [orders, setOrders] = useState([]);
@@ -446,6 +446,24 @@ export default function PurchaseOrderList() {
                     </button>
                     {/* Copy To Dropdown */}
                     <CopyToDropdown handleCopyTo={handleCopyTo} order={order} />
+                    {/* Email Button */}
+                    <Link href={`/admin/purchase-order-view/${order._id}/send-email`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition duration-200"
+                        title="Send Email"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    {/* WhatsApp Button */}
+                    <Link href={`/admin/purchase-order-view/${order._id}/send-whatsapp`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="Send WhatsApp"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

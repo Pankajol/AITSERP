@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCopy, FaEye, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function SalesOrderList() {
   const [orders, setOrders] = useState([]);
@@ -118,7 +118,7 @@ export default function SalesOrderList() {
             <tr>
               <th className="py-3 px-4 border-b">Ref Number</th>
               <th className="py-3 px-4 border-b">Customer Name</th>
-              <th className="py-3 px-4 border-b">Posting Date</th>
+              <th className="py-3 px-4 border-b">Order Date</th>
               <th className="py-3 px-4 border-b">Status</th>
               <th className="py-3 px-4 border-b">Grand Total</th>
               <th className="py-3 px-4 border-b">Actions</th>
@@ -130,7 +130,7 @@ export default function SalesOrderList() {
                 <td className="py-3 px-4 border-b text-center">{order.refNumber}</td>
                 <td className="py-3 px-4 border-b text-center">{order.customerName}</td>
                 <td className="py-3 px-4 border-b text-center">
-                  {order.postingDate ? new Date(order.postingDate).toLocaleDateString() : ""}
+                  {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : ""}
                 </td>
                 <td className="py-3 px-4 border-b text-center">{order.status}</td>
                 <td className="py-3 px-4 border-b text-center">{order.grandTotal}</td>
@@ -164,6 +164,24 @@ export default function SalesOrderList() {
                     </button>
                     {/* Copy To Dropdown */}
                     <CopyToDropdown handleCopyTo={handleCopyTo} order={order} />
+                    {/* Email Button */}  
+                    <Link href={`/admin/sales-order-email/${order._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
+                        title="Email Order"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    {/* WhatsApp Button */} 
+                    <Link href={`/admin/sales-order-whatsapp/${order._id}`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="WhatsApp Order"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

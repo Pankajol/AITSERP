@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { FaEdit, FaTrash, FaCopy, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCopy, FaEye , FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
 export default function GRNView() {
   const [grns, setGRNs] = useState([]);
@@ -64,7 +64,7 @@ export default function GRNView() {
           title="Copy To"
         >
           <FaCopy className="mr-1" />
-          <span className="hidden sm:inline">Copy To</span>
+          {/* <span className="hidden sm:inline">Copy To</span> */}
         </button>
         {isOpen && (
           <div className="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
@@ -97,9 +97,9 @@ export default function GRNView() {
         <table className="min-w-full bg-white shadow-md rounded border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
-              <th className="py-3 px-4 border-b">GRN Number</th>
+              {/* <th className="py-3 px-4 border-b">GRN Number</th> */}
               <th className="py-3 px-4 border-b">Supplier Name</th>
-              <th className="py-3 px-4 border-b">GRN Date</th>
+              <th className="py-3 px-4 border-b"> Date</th>
               <th className="py-3 px-4 border-b">Status</th>
               <th className="py-3 px-4 border-b">Grand Total</th>
               <th className="py-3 px-4 border-b">Actions</th>
@@ -108,10 +108,10 @@ export default function GRNView() {
           <tbody>
             {grns.map((grn) => (
               <tr key={grn._id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 border-b text-center">{grn.grnNumber}</td>
+                {/* <td className="py-3 px-4 border-b text-center">{grn.grnNumber}</td> */}
                 <td className="py-3 px-4 border-b text-center">{grn.supplierName}</td>
                 <td className="py-3 px-4 border-b text-center">
-                  {grn.grnDate ? new Date(grn.grnDate).toLocaleDateString() : ""}
+                  {grn.postingDate ? new Date(grn.postingDate).toLocaleDateString() : ""}
                 </td>
                 <td className="py-3 px-4 border-b text-center">{grn.status}</td>
                 <td className="py-3 px-4 border-b text-center">{grn.grandTotal}</td>
@@ -141,6 +141,22 @@ export default function GRNView() {
                       <FaTrash />
                     </button>
                     <CopyToDropdown handleCopyTo={handleCopyTo} grn={grn} />
+                    <Link href={`/admin/grn-view/${grn._id}/send-email`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition duration-200"
+                        title="Send Email"
+                      >
+                        <FaEnvelope />
+                      </button>
+                    </Link>
+                    <Link href={`/admin/grn-view/${grn._id}/send-whatsapp`}>
+                      <button
+                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
+                        title="Send WhatsApp"
+                      >
+                        <FaWhatsapp />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>
