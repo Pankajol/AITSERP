@@ -763,7 +763,8 @@ function SupplierManagement() {
     ifscCode: "",
     leadTime: "",
     qualityRating: "",
-    supplierCategory: "",
+     supplierCategory: "",
+    gstCategory: "",
   });
 
   // Fetch suppliers on mount
@@ -909,7 +910,8 @@ function SupplierManagement() {
       ifscCode: "",
       leadTime: "",
       qualityRating: "",
-      supplierCategory: "",
+       supplierCategory: "",
+      gstCategory: "",
     });
     setView("list");
   };
@@ -1100,6 +1102,21 @@ function SupplierManagement() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Supplier Category
+            </label>
+            <input
+              type="text"
+              name="supplierCategory"
+              value={supplierDetails.supplierCategory}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+     
+
+          
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1403,12 +1420,12 @@ function SupplierManagement() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Supplier Category
+              Gst Category
             </label>
             <input
               type="text"
-              name="supplierCategory"
-              value={supplierDetails.supplierCategory}
+              name="gstCategory"
+              value={supplierDetails.gstCategory}
               onChange={handleChange}
               className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
