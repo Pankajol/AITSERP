@@ -125,12 +125,12 @@ import Inventory from '@/models/Inventory';
 import ReceiptProduction from '@/models/ReceiptProduction';
 import ProductionOrder from '@/models/ProductionOrder';
 
-export async function POST(req, context) {
+export async function  POST(req, contextPromise) {
   try {
-    await connectDB();
-
-    // Extract orderId from context.params
-    const { orderId } = context || {};
+  
+  const context = await contextPromise;
+  const { params } = context;
+  const { orderId } = params || {};
     if (!orderId) {
       return NextResponse.json(
         { success: false, message: 'Missing orderId in URL' },
@@ -172,6 +172,7 @@ export async function POST(req, context) {
       }
 
       // Correct ObjectId assignment
+        await connectDB();
 const itemObjId = new mongoose.Types.ObjectId(itemId);
 const warehouseObjId = new mongoose.Types.ObjectId(sourceWarehouse);
 

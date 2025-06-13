@@ -292,7 +292,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams,useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -378,6 +378,7 @@ function BatchModal({ batches, setBatches, onClose }) {
 export default function ReceiptForProductionPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+    const router = useRouter(); // ✅ router defined
   const orderId = params?.orderId;
   const qtyParam = Number(searchParams.get('qty')) || 1;
 
@@ -469,7 +470,7 @@ const handleSubmit = useCallback(
       toast.success('Production receipt created');
       router.push("/admin/productionorders-list-view");
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Failed to create receipt');
+      // toast.error(error?.response?.data?.message || 'Failed to create receipt');
     }
   },
   [order, qtyParam, batches, sourceWarehouse, unitPrice, docNo, docDate]
