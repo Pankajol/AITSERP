@@ -253,6 +253,14 @@ function SalesInvoiceFormWrapper() {
     });
   }, []);
 
+  
+  const removeItemRow = useCallback((index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  }, []);
+
   const addItemRow = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
@@ -468,6 +476,7 @@ function SalesInvoiceFormWrapper() {
           onAddItem={addItemRow}
           setFormData={setFormData}
           onItemSelect={handleItemSelect}
+          removeItemRow={removeItemRow}
         />
       </div>
 

@@ -1,7 +1,9 @@
 import dbConnect from "@/lib/db";
 import SalesOrder from "@/models/SalesOrder";
+import { NextResponse } from "next/server";
 
-// GET /api/grn/[id]: Get a single GRN by ID
+
+// // GET /api/grn/[id]: Get a single GRN by ID
 export async function GET(req, { params }) {
   try {
     await dbConnect();
@@ -25,6 +27,30 @@ export async function GET(req, { params }) {
     );
   }
 }
+
+
+// export async function GET(req, { params }) {
+//   try {
+//     await dbConnect();
+//     const { id } = params;
+
+  
+
+//     const order = await SalesOrder.findById(id)
+//       .populate("customer") // only if you use refs
+//       .populate("items.item")
+//       .populate("items.warehouse");
+
+//     if (!order) {
+//       return NextResponse.json({ message: "Sales Order not found" }, { status: 404 });
+//     }
+
+//     return NextResponse.json({ success: true, data: order });
+//   } catch (error) {
+//     console.error("API Error:", error);
+//     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+//   }
+// }
 
 export async function PUT(req, { params }) {
   try {

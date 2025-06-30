@@ -45,7 +45,7 @@ export default function GRNView() {
   const handleCopyTo = (grns, destination) => {
     sessionStorage.setItem("grnData", JSON.stringify(grns));
     if (destination === "invoice") {
-      router.push("/admin/purchase-invoice");
+      router.push("/admin/purchaseInvoice-view/new");
     }
   };
 
@@ -86,7 +86,7 @@ export default function GRNView() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold mb-6 text-center">GRN List</h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/GRN">
+        <Link href="/admin/grn-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New GRN
@@ -98,6 +98,7 @@ export default function GRNView() {
           <thead className="bg-gray-100">
             <tr>
               {/* <th className="py-3 px-4 border-b">GRN Number</th> */}
+              <th className="py-3 px-4 border-b">document NO.</th>
               <th className="py-3 px-4 border-b">Supplier Name</th>
               <th className="py-3 px-4 border-b"> Date</th>
               <th className="py-3 px-4 border-b">Status</th>
@@ -109,6 +110,7 @@ export default function GRNView() {
             {grns.map((grn) => (
               <tr key={grn._id} className="hover:bg-gray-50 transition-colors">
                 {/* <td className="py-3 px-4 border-b text-center">{grn.grnNumber}</td> */}
+                <td className="py-3 px-4 border-b text-center">{grn.documentNumber}</td>
                 <td className="py-3 px-4 border-b text-center">{grn.supplierName}</td>
                 <td className="py-3 px-4 border-b text-center">
                   {grn.postingDate ? new Date(grn.postingDate).toLocaleDateString() : ""}

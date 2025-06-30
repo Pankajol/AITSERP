@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
-import Delivery from "@/models/deliveryModels"; // Your Delivery model
+import Delivery from "../../../models/deliveryModels"; // Your Delivery model
 import SalesOrder from "@/models/SalesOrder"; // Your Sales Order model
 import Inventory from "@/models/Inventory";   // Inventory model (includes batches)
 import StockMovement from "@/models/StockMovement"; // Model for logging stock movements

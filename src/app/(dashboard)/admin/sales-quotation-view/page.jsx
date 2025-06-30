@@ -45,7 +45,7 @@ export default function SalesQuotationList() {
     if (destination === "Order") {
       // Use the correct key that matches your useEffect.
       sessionStorage.setItem("salesOrderData", JSON.stringify(quotation));
-      router.push("/admin/sales-order");
+      router.push("/admin/sales-order-view/new");
     }
   };
   
@@ -61,13 +61,13 @@ export default function SalesQuotationList() {
 
   //   //   router.push("/admin/purchase-invoice");
   //   // }else 
-  //   if (destination === "Order") {
+    // if (destination === "Order") {
       
-  //     sessionStorage.setItem("SalesOrderData", JSON.stringify(quotation));
+    //   sessionStorage.setItem("SalesOrderData", JSON.stringify(quotation));
 
-  //     // sessionStorage.setItem("purchaseOrderData", JSON.stringify(quotation));
-  //     router.push("/admin/sales-order");
-  //   }
+    //   // sessionStorage.setItem("purchaseOrderData", JSON.stringify(quotation));
+    //   router.push("/admin/sales-order");
+    // }
   //   // else if (destination === "Debit-Note") {
       
   //   //   sessionStorage.setItem("debitNoteData", JSON.stringify(quotation));
@@ -124,7 +124,7 @@ export default function SalesQuotationList() {
         Sales Quotations
       </h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/sales-quotation/new">
+        <Link href="/admin/sales-quotation-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New Quotation
@@ -157,7 +157,7 @@ export default function SalesQuotationList() {
                 </td>
                 <td className="py-3 px-4 border-b text-center">
                   {quotation.postingDate
-                    ? new Date(quotation.postingDate).toLocaleDateString()
+                    ? new Date(quotation.postingDate).toLocaleDateString('en-GB')
                     : ""}
                 </td>
                 <td className="py-3 px-4 border-b text-center">
@@ -181,7 +181,7 @@ export default function SalesQuotationList() {
                     </Link>
                     {/* Edit Button (opens the form with editId) */}
                     <Link
-                      href={`/admin/sales-quotation/new?editId=${quotation._id}`}
+                      href={`/admin/sales-quotation-view/new?editId=${quotation._id}`}
                     >
                       <button
                         className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"

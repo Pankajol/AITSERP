@@ -107,7 +107,7 @@ export default function PurchaseOrderList() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold mb-6 text-center">Sales Invoice</h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/sales-invoice">
+        <Link href="/admin/sales-invoice-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New Invoice

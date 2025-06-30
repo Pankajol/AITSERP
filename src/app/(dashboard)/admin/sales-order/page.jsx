@@ -1,14 +1,11 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import CustomerSearch from "@/components/CustomerSearch";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-// Updated initial state for Sales Order with additional item fields.
 const initialOrderState = {
   customerCode: "",
   customerName: "",
@@ -25,21 +22,21 @@ const initialOrderState = {
       itemId: "",
       itemName: "",
       itemDescription: "",
-      quantity: 0, // Total quantity for the item.
+      quantity: 0,
       allowedQuantity: 0,
-      receivedQuantity: 0, // For Sales Order copy.
+      receivedQuantity: 0,
       unitPrice: 0,
       discount: 0,
       freight: 0,
-      taxOption: "GST", // or "IGST"
+      taxOption: "GST",
       priceAfterDiscount: 0,
       totalAmount: 0,
       gstAmount: 0,
-      gstRate: 0,       // New field for Sales Order copy.
-      cgstAmount: 0,    // New field.
-      sgstAmount: 0,    // New field.
+      gstRate: 0,
+      cgstAmount: 0,
+      sgstAmount: 0,
       igstAmount: 0,
-      managedBy: "",    // New field.
+      managedBy: "",
       batches: [],
       errorMessage: "",
       warehouse: "",
@@ -61,168 +58,138 @@ const initialOrderState = {
   fromQuote: false,
 };
 
-function formatDateForInput(date) {
+const round = (num, decimals = 2) => {
+  const n = Number(num);
+  return isNaN(n) ? 0 : Number(n.toFixed(decimals));
+};
+
+function formatDate(date) {
   if (!date) return "";
   const d = new Date(date);
-  const year = d.getFullYear();
-  const month = ("0" + (d.getMonth() + 1)).slice(-2);
-  const day = ("0" + d.getDate()).slice(-2);
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Helper function to fetch managedBy from the item master using itemId.
-async function fetchManagedBy(itemId) {
-  try {
-    const res = await axios.get(`/api/items/${itemId}`);
-    return res.data.managedBy; // Returns "batch" or another value.
-  } catch (error) {
-    console.error("Error fetching managedBy for item", itemId, error);
-    return "";
+const computeItemValues = (item) => {
+  const quantity = parseFloat(item.quantity) || 0;
+  const unitPrice = parseFloat(item.unitPrice) || 0;
+  const discount = parseFloat(item.discount) || 0;
+  const freight = parseFloat(item.freight) || 0;
+  const priceAfterDiscount = round(unitPrice - discount);
+  const totalAmount = round(quantity * priceAfterDiscount + freight);
+
+  if (item.taxOption === "GST") {
+    const gstRate = parseFloat(item.gstRate) || 0;
+    const cgstRate = gstRate / 2;
+    const sgstRate = gstRate / 2;
+    const cgstAmount = round(totalAmount * (cgstRate / 100));
+    const sgstAmount = round(totalAmount * (sgstRate / 100));
+    return {
+      priceAfterDiscount,
+      totalAmount,
+      gstAmount: cgstAmount + sgstAmount,
+      cgstAmount,
+      sgstAmount,
+      igstAmount: 0,
+    };
   }
-}
 
+  if (item.taxOption === "IGST") {
+    const igstRate = parseFloat(item.gstRate) || 0;
+    const igstAmount = round(totalAmount * (igstRate / 100));
+    return {
+      priceAfterDiscount,
+      totalAmount,
+      gstAmount: 0,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      igstAmount,
+    };
+  }
 
-function SalesOrderFormWrapper() {
+  return {
+    priceAfterDiscount,
+    totalAmount,
+    gstAmount: 0,
+    cgstAmount: 0,
+    sgstAmount: 0,
+    igstAmount: 0,
+  };
+};
+
+export default function SalesOrderWrapper() {
   return (
-    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+    <Suspense fallback={<div className="p-10">Loading Sales Order...</div>}>
       <SalesOrderForm />
     </Suspense>
   );
 }
 
- function SalesOrderForm() {
+function SalesOrderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("editId");
-  const [isCopied, setIsCopied] = useState(false);
+
   const [formData, setFormData] = useState(initialOrderState);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Summary Calculation Effect.
   useEffect(() => {
-    const totalBeforeDiscountCalc = formData.items.reduce((acc, item) => {
-      const unitPrice = parseFloat(item.unitPrice) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const quantity = parseFloat(item.quantity) || 0;
-      return acc + (unitPrice - discount) * quantity;
-    }, 0);
-
-    const totalItemsCalc = formData.items.reduce(
-      (acc, item) => acc + (parseFloat(item.totalAmount) || 0),
-      0
-    );
-
-    const gstTotalCalc = formData.items.reduce((acc, item) => {
-      if (item.taxOption === "IGST") {
-        return acc + (parseFloat(item.igstAmount) || 0);
-      }
-      return acc + (parseFloat(item.gstAmount) || 0);
-    }, 0);
-
-    const overallFreight = parseFloat(formData.freight) || 0;
-    const roundingCalc = parseFloat(formData.rounding) || 0;
-    const totalDownPaymentCalc = parseFloat(formData.totalDownPayment) || 0;
-    const appliedAmountsCalc = parseFloat(formData.appliedAmounts) || 0;
-
-    const grandTotalCalc =
-      totalItemsCalc + gstTotalCalc + overallFreight + roundingCalc;
-    const openBalanceCalc =
-      grandTotalCalc - (totalDownPaymentCalc + appliedAmountsCalc);
-
-    if (
-      totalBeforeDiscountCalc !== formData.totalBeforeDiscount ||
-      gstTotalCalc !== formData.gstTotal ||
-      grandTotalCalc !== formData.grandTotal ||
-      openBalanceCalc !== formData.openBalance
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        totalBeforeDiscount: totalBeforeDiscountCalc,
-        gstTotal: gstTotalCalc,
-        grandTotal: grandTotalCalc,
-        openBalance: openBalanceCalc,
-      }));
+    if (editId && /^[0-9a-fA-F]{24}$/.test(editId)) {
+      setLoading(true);
+      axios.get(`/api/sales-order/${editId}`)
+        .then(res => {
+          const record = res.data.data;
+          const safeItems = Array.isArray(record.items) ? record.items : [];
+          setFormData({
+            ...initialOrderState,
+            ...record,
+            items: safeItems.map(i => ({
+              ...initialOrderState.items[0],
+              ...i,
+              item: i.item?._id || i.item || "",
+              warehouse: i.warehouse?._id || i.warehouse || "",
+              taxOption: i.taxOption || "GST",
+            })),
+            orderDate: formatDate(record.orderDate),
+            expectedDeliveryDate: formatDate(record.expectedDeliveryDate),
+          });
+        })
+        .catch(err => setError(err.message || "Failed to load"))
+        .finally(() => setLoading(false));
     }
+  }, [editId]);
+  // Recalculate totals when items or charges change
+  useEffect(() => {
+    const totalBeforeDiscount = round(
+      formData.items.reduce((sum, i) => sum + (i.unitPrice * i.quantity - i.discount), 0)
+    );
+    const totalAmount = round(formData.items.reduce((sum, i) => sum + i.totalAmount, 0));
+    const gstTotal = round(formData.items.reduce((sum, i) => sum + i.gstAmount, 0));
+    const grandTotal = round(totalAmount + gstTotal + (formData.freight || 0) + (formData.rounding || 0));
+    const openBalance = round(grandTotal - ((formData.totalDownPayment || 0) + (formData.appliedAmounts || 0)));
+
+    setFormData((prev) => ({
+      ...prev,
+      totalBeforeDiscount,
+      gstTotal,
+      grandTotal,
+      openBalance,
+    }));
   }, [
     formData.items,
     formData.freight,
     formData.rounding,
     formData.totalDownPayment,
     formData.appliedAmounts,
-    formData.totalBeforeDiscount,
-    formData.gstTotal,
-    formData.grandTotal,
-    formData.openBalance,
   ]);
 
-  // Copy effect: Load data from sessionStorage (salesOrderData) and for items managed by batch, re-fetch managedBy.
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedData = sessionStorage.getItem("salesOrderData");
-      if (storedData) {
-        (async () => {
-          try {
-            const parsedData = JSON.parse(storedData);
-            const updatedItems = await Promise.all(
-              parsedData.items.map(async (item) => {
-                if (item.managedByBatch && (!item.managedBy || item.managedBy === "batch")) {
-                  // Using itemId as the unique identifier.
-                  const newManagedBy = await fetchManagedBy(item.itemId);
-                  return {
-                    ...item,
-                    managedBy: newManagedBy || "batch",
-                    gstRate: item.gstRate !== undefined ? item.gstRate : 0,
-                    cgstAmount: item.cgstAmount !== undefined ? item.cgstAmount : 0,
-                    sgstAmount: item.sgstAmount !== undefined ? item.sgstAmount : 0,
-                  };
-                }
-                return {
-                  ...item,
-                  gstRate: item.gstRate !== undefined ? item.gstRate : 0,
-                  cgstAmount: item.cgstAmount !== undefined ? item.cgstAmount : 0,
-                  sgstAmount: item.sgstAmount !== undefined ? item.sgstAmount : 0,
-                };
-              })
-            );
-            parsedData.items = updatedItems;
-            setFormData(parsedData);
-            setIsCopied(true);
-            sessionStorage.removeItem("salesOrderData");
-          } catch (error) {
-            console.error("Error parsing copied data:", error);
-          }
-        })();
-      }
-    }
-  }, []);
-
-  // Edit effect: When editing an existing Sales Order.
-  useEffect(() => {
-    if (editId) {
-      axios
-        .get(`/api/salesOrder/${editId}`)
-        .then((res) => {
-          if (res.data.success) {
-            const record = res.data.data;
-            setFormData({
-              ...record,
-              orderDate: formatDateForInput(record.orderDate),
-              expectedDeliveryDate: formatDateForInput(record.expectedDeliveryDate),
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching Sales Order for edit", err);
-          toast.error("Error fetching Sales Order data");
-        });
-    }
-  }, [editId]);
-
-  const handleCustomerSelect = useCallback((selectedCustomer) => {
+  const handleCustomerSelect = useCallback((customer) => {
     setFormData((prev) => ({
       ...prev,
-      customerCode: selectedCustomer.customerCode || "",
-      customerName: selectedCustomer.customerName || "",
-      contactPerson: selectedCustomer.contactPersonName || "",
+      customerName: customer.customerName,
+      customerCode: customer.customerCode,
+      contactPerson: customer.contactPersonName,
     }));
   }, []);
 
@@ -233,299 +200,245 @@ function SalesOrderFormWrapper() {
 
   const handleItemChange = useCallback((index, e) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index] = { ...updatedItems[index], [name]: value };
-      return { ...prev, items: updatedItems };
-    });
-  }, []);
+    const updatedItems = [...formData.items];
+    const isNumeric = [
+      "quantity", "allowedQuantity", "receivedQuantity", "unitPrice", "discount", "freight", "gstRate",
+    ].includes(name);
+    const newValue = isNumeric ? parseFloat(value) || 0 : value;
 
-  const addItemRow = useCallback(() => {
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [name]: newValue,
+      ...computeItemValues({ ...updatedItems[index], [name]: newValue }),
+    };
+
+    setFormData((prev) => ({ ...prev, items: updatedItems }));
+  }, [formData.items]);
+
+  const addItemRow = () => {
     setFormData((prev) => ({
       ...prev,
-      items: [
-        ...prev.items,
-        {
-          item: "",
-          itemCode: "",
-          itemId: "",
-          itemName: "",
-          itemDescription: "",
-          quantity: 0,
-          allowedQuantity: 0,
-          receivedQuantity: 0,
-          unitPrice: 0,
-          discount: 0,
-          freight: 0,
-          taxOption: "GST",
-          priceAfterDiscount: 0,
-          totalAmount: 0,
-          gstAmount: 0,
-          gstRate: 0,
-          cgstAmount: 0,
-          sgstAmount: 0,
-          igstAmount: 0,
-          managedBy: "",
-          batches: [],
-          errorMessage: "",
-          warehouse: "",
-          warehouseName: "",
-          warehouseCode: "",
-          warehouseId: "",
-          managedByBatch: true,
-        },
-      ],
+      items: [...prev.items, { ...initialOrderState.items[0] }],
     }));
-  }, []);
+  };
+
+  const removeItemRow = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
 
   const handleSubmit = async () => {
+    if (!formData.customerCode || !formData.customerName) {
+      alert("Customer details are required.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      // Update each item so that it always has a managedBy value ("batch" or "serial")
-      const updatedItems = await Promise.all(
-        formData.items.map(async (item) => {
-          // If managedBy is missing or you want to ensure it is up-to-date, fetch it
-          if (!item.managedBy) {
-            const managedByValue = await fetchManagedBy(item.itemId);
-            // Ensure the value is either "batch" or "serial" (default to "batch" if unknown)
-            const finalManagedBy = managedByValue === "serial" ? "serial" : "batch";
-            return { ...item, managedBy: finalManagedBy };
-          }
-          // Alternatively, you could force refresh for every item:
-          // const managedByValue = await fetchManagedBy(item.itemId);
-          // const finalManagedBy = managedByValue === "serial" ? "serial" : "batch";
-          // return { ...item, managedBy: finalManagedBy };
-  
-          return item;
-        })
-      );
-  
-      // Assemble the updated form data with updated items
-      const updatedFormData = { ...formData, items: updatedItems };
-  
       if (editId) {
-        await axios.put(`/api/salesOrder/${editId}`, updatedFormData, {
-          headers: { "Content-Type": "application/json" },
-        });
-        toast.success("Sales Order updated successfully");
+        await axios.put(`/api/sales-order/${editId}`, formData);
+        alert("Sales Order updated successfully");
       } else {
-        await axios.post("/api/sales-order", updatedFormData, {
-          headers: { "Content-Type": "application/json" },
-        });
-        toast.success("Sales Order added successfully");
+        await axios.post("/api/sales-order", formData);
+        alert("Sales Order created successfully");
         setFormData(initialOrderState);
       }
-      router.push("/admin/sales-order-view");
+      router.push("/admin/salesOrder");
     } catch (error) {
-      console.error("Error saving Sales Order:", error);
-      toast.error(editId ? "Failed to update Sales Order" : "Error adding Sales Order");
+      alert("Error saving Sales Order");
+    } finally {
+      setSubmitting(false);
     }
   };
-  
+
+  if (loading) return <div className="p-4">Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
     <div className="m-11 p-5 shadow-xl">
       <h1 className="text-2xl font-bold mb-4">
         {editId ? "Edit Sales Order" : "Create Sales Order"}
       </h1>
-      {/* Customer Section */}
-      <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="basis-full md:basis-1/2 px-2 space-y-4">
-          <div>
-            {isCopied ? (
-              <div>
-                <label className="block mb-2 font-medium">Customer Name</label>
-                <input
-                  type="text"
-                  name="customerName"
-                  value={formData.customerName || ""}
-                  onChange={handleInputChange}
-                  placeholder="Enter customer name"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block mb-2 font-medium">Customer Name</label>
-                <CustomerSearch onSelectCustomer={handleCustomerSelect} />
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">Customer Code</label>
-            <input
-              type="text"
-              name="customerCode"
-              value={formData.customerCode || ""}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-100"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">Contact Person</label>
-            <input
-              type="text"
-              name="contactPerson"
-              value={formData.contactPerson || ""}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-100"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">Reference Number</label>
-            <input
-              type="text"
-              name="refNumber"
-              value={formData.refNumber || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        </div>
-        {/* Additional Order Info */}
-        <div className="basis-full md:basis-1/2 px-2 space-y-4">
-          <div>
-            <label className="block mb-2 font-medium">Status</label>
-            <select
-              name="status"
-              value={formData.status || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Select status (optional)</option>
-              <option value="Pending">Pending</option>
-              <option value="Confirmed">Confirmed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">Order Date</label>
-            <input
-              type="date"
-              name="orderDate"
-              value={formData.orderDate || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">
-              Expected Delivery Date
-            </label>
-            <input
-              type="date"
-              name="expectedDeliveryDate"
-              value={formData.expectedDeliveryDate || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* Items Section */}
-      <h2 className="text-xl font-semibold mt-6">Items</h2>
-      <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
-        <ItemSection
-          items={formData.items}
-          onItemChange={handleItemChange}
-          onAddItem={addItemRow}
-          setFormData={setFormData}
-        />
-      </div>
-
-      {/* Remarks & Sales Employee */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
+      {/* CUSTOMER FIELDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
-          <label className="block mb-2 font-medium">Sales Employee</label>
-          <input
-            type="text"
-            name="salesEmployee"
-            value={formData.salesEmployee || ""}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
+          <label className="font-medium">Customer Name</label>
+          <CustomerSearch
+            onSelectCustomer={handleCustomerSelect}
+            selectedCustomerName={formData.customerName}
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">Remarks</label>
-          <textarea
-            name="remarks"
-            value={formData.remarks || ""}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-          ></textarea>
-        </div>
-      </div>
-
-      {/* Summary Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-        <div>
-          <label className="block mb-2 font-medium">Total Before Discount</label>
+          <label className="font-medium">Customer Code</label>
           <input
-            type="number"
-            value={formData.totalBeforeDiscount.toFixed(2)}
+            type="text"
+            name="customerCode"
+            value={formData.customerCode}
             readOnly
             className="w-full p-2 border rounded bg-gray-100"
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">Rounding</label>
+          <label className="font-medium">Contact Person</label>
+          <input
+            type="text"
+            name="contactPerson"
+            value={formData.contactPerson}
+            readOnly
+            className="w-full p-2 border rounded bg-gray-100"
+          />
+        </div>
+        <div>
+          <label className="font-medium">Reference Number</label>
+          <input
+            type="text"
+            name="refNumber"
+            value={formData.refNumber}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+      </div>
+
+      {/* DATES & STATUS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label className="font-medium">Order Date</label>
+          <input
+            type="date"
+            name="orderDate"
+            value={formData.orderDate}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="font-medium">Expected Delivery Date</label>
+          <input
+            type="date"
+            name="expectedDeliveryDate"
+            value={formData.expectedDeliveryDate}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="font-medium">Status</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="Pending">Pending</option>
+            <option value="Closed">Closed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ITEM SECTION */}
+      <ItemSection
+         items={formData.items}
+        onItemChange={handleItemChange}
+        onAddItem={addItemRow}
+        onRemoveItem={removeItemRow}
+        computeItemValues={computeItemValues}
+      />
+
+      {/* TOTALS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+        <div>
+          <label className="font-medium">Total Before Discount</label>
+          <input
+            type="number"
+            value={formData.totalBeforeDiscount}
+            readOnly
+            className="w-full p-2 border rounded bg-gray-100"
+          />
+        </div>
+        <div>
+          <label className="font-medium">GST Total</label>
+          <input
+            type="number"
+            value={formData.gstTotal}
+            readOnly
+            className="w-full p-2 border rounded bg-gray-100"
+          />
+        </div>
+        <div>
+          <label className="font-medium">Freight</label>
+          <input
+            type="number"
+            name="freight"
+            value={formData.freight}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="font-medium">Rounding</label>
           <input
             type="number"
             name="rounding"
-            value={formData.rounding || 0}
+            value={formData.rounding}
             onChange={handleInputChange}
             className="w-full p-2 border rounded"
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">GST Total</label>
+          <label className="font-medium">Grand Total</label>
           <input
             type="number"
-            value={formData.gstTotal.toFixed(2)}
+            value={formData.grandTotal}
             readOnly
             className="w-full p-2 border rounded bg-gray-100"
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">Grand Total</label>
+          <label className="font-medium">Open Balance</label>
           <input
             type="number"
-            value={formData.grandTotal.toFixed(2)}
+            value={formData.openBalance}
             readOnly
             className="w-full p-2 border rounded bg-gray-100"
           />
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
+      {/* REMARKS + ACTIONS */}
+      <div className="mt-8">
+        <label className="font-medium block mb-2">Remarks</label>
+        <textarea
+          name="remarks"
+          value={formData.remarks}
+          onChange={handleInputChange}
+          className="w-full p-2 border rounded"
+          rows={3}
+        ></textarea>
+      </div>
+
+      <div className="mt-6 flex gap-4">
         <button
           onClick={handleSubmit}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
+          disabled={submitting}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
         >
-          {editId ? "Update" : "Add"}
+          {submitting ? "Submitting..." : editId ? "Update Order" : "Create Order"}
         </button>
         <button
           onClick={() => {
             setFormData(initialOrderState);
             router.push("/admin/salesOrder");
           }}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
+          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400"
         >
           Cancel
         </button>
-        <button
-          onClick={() => {
-            sessionStorage.setItem("salesOrderData", JSON.stringify(formData));
-            alert("Data copied from Sales Order!");
-          }}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-        >
-          Copy From
-        </button>
       </div>
-
-      <ToastContainer />
     </div>
   );
 }
-export default SalesOrderFormWrapper;

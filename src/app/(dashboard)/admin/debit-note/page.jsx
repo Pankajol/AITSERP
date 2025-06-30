@@ -287,6 +287,11 @@ function DebitNoteFormWrapper() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       let copiedData = null;
+      const invoiceData = sessionStorage.getItem("invoiceData");
+      if (invoiceData) {
+        copiedData = JSON.parse(invoiceData);
+        sessionStorage.removeItem("invoiceData");
+      }
       const soData = sessionStorage.getItem("debitNoteData");
       const delData = sessionStorage.getItem("DebitNoteData");
       if (soData) {
@@ -346,6 +351,14 @@ function DebitNoteFormWrapper() {
       updatedItems[index] = { ...updatedItems[index], [name]: value };
       return { ...prev, items: updatedItems };
     });
+  }, []);
+
+  
+  const removeItemRow = useCallback((index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
   }, []);
 
   const addItemRow = useCallback(() => {
@@ -546,6 +559,7 @@ function DebitNoteFormWrapper() {
           onItemChange={handleItemChange}
           onAddItem={addItemRow}
           setFormData={setFormData}
+          removeItemRow={removeItemRow}
         />
       </div>
 

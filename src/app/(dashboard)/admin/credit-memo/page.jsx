@@ -247,6 +247,14 @@ function CreditNoteFormWrapper() {
     });
   }, []);
 
+  
+   const removeItemRow = useCallback((index) => {
+     setFormData((prev) => ({
+       ...prev,
+       items: prev.items.filter((_, i) => i !== index),
+     }));
+   }, []);
+
   const addItemRow = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
@@ -587,13 +595,27 @@ function CreditNoteFormWrapper() {
       {/* Items Section */}
       <h2 className="text-xl font-semibold mt-6">Items</h2>
       <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
-        <ItemSection
+        {/* <ItemSection
           items={formData.items}
           onItemChange={handleItemChange}
           onAddItem={addItemRow}
           setFormData={setFormData}
           onItemSelect={handleItemSelect}
+          removeItemRow={removeItemRow}
+        /> */}
+
+
+           <ItemSection
+          items={formData.items}
+          onItemChange={handleItemChange}
+          onAddItem={addItemRow}
+        
+              onRemoveItem={removeItemRow}
+       
+          setFormData={setFormData}
         />
+    
+      
       </div>
       {/* Batch Modal Trigger – for items with managedByBatch true and managedBy = "batch" */}
       <div className="mb-8">

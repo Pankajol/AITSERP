@@ -291,8 +291,36 @@ export async function POST(req) {
 }
 
 
+/* ------------------------------------------------------------------ */
+/* GET /api/grn         → list every GRN (optionally filter)          */
+/* ------------------------------------------------------------------ */
+export async function GET(req) {
+  try {
+    await dbConnect();
 
+    // Example: /api/grn?supplierCode=S-1001
+    const { searchParams } = new URL(req.url);
+    const query = {};
 
+    if (searchParams.get("supplierCode"))
+      query.supplierCode = searchParams.get("supplierCode");
+    if (searchParams.get("purchaseOrderId"))
+      query.purchaseOrderId = searchParams.get("purchaseOrderId");
+
+    const grns = await GRN.find(query).sort({ createdAt: -1 }).lean();
+
+    return new Response(
+      JSON.stringify({ success: true, data: grns }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("GET /api/grn:", err);
+    return new Response(
+      JSON.stringify({ success: false, message: err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
 
 
 
@@ -312,168 +340,163 @@ export async function POST(req) {
 //   session.startTransaction();
 //   try {
 //     const grnData = await req.json();
-//     console.log("Received GRN Data:", grnData);
 
 //     // ----- Data Cleaning -----
-//     // Remove _id from GRN data unconditionally.
-//     if ("_id" in grnData) {
-//       delete grnData._id;
-//     }
-
-//     // If this GRN was copied from a PO, store the PO _id and then remove it.
-//     let purchaseOrderId = null;
-//     if (grnData.purchaseOrderId) {
-//       purchaseOrderId = grnData.purchaseOrderId;
-//       delete grnData.purchaseOrderId;
-//     }
-
-//     // Remove _id from each GRN item unconditionally.
-//     if (Array.isArray(grnData.items)) {
-//       grnData.items = grnData.items.map((item) => {
-//         if ("_id" in item) {
-//           delete item._id;
-//         }
-//         return item;
+//     const cleanGRNData = { ...grnData };
+//     if ("_id" in cleanGRNData) delete cleanGRNData._id;
+    
+//     // Extract and clean purchaseOrderId
+//     const purchaseOrderId = cleanGRNData.purchaseOrderId || null;
+//     delete cleanGRNData.purchaseOrderId;
+    
+//     // Clean items array
+//     if (Array.isArray(cleanGRNData.items)) {
+//       cleanGRNData.items = cleanGRNData.items.map((item) => {
+//         const cleanItem = { ...item };
+//         if ("_id" in cleanItem) delete cleanItem._id;
+//         return cleanItem;
 //       });
 //     }
 
 //     // ----- Validation: Quantities & Required Fields -----
-//     for (const [i, item] of grnData.items.entries()) {
+//     for (const [i, item] of cleanGRNData.items.entries()) {
+//       const itemIndex = i + 1;
 //       const allowedQty = Number(item.allowedQuantity) || 0;
-//       if (allowedQty > 0 && Number(item.quantity) > allowedQty) {
+//       const receivedQty = Number(item.receivedQuantity) || 0;
+      
+//       // Validate quantity limits
+//       if (allowedQty > 0 && receivedQty > allowedQty) {
 //         throw new Error(
-//           `For item ${item.itemCode}, GRN quantity (${item.quantity}) exceeds allowed quantity (${allowedQty}).`
+//           `Item ${itemIndex} (${item.itemCode}): Received quantity (${receivedQty}) exceeds allowed (${allowedQty})`
 //         );
 //       }
-//       if (!item.item) {
+      
+//       // Validate required fields
+//       if (!item.item || !Types.ObjectId.isValid(item.item)) {
 //         throw new Error(
-//           `Missing item ObjectId for row ${i + 1} with code: ${item.itemCode}`
+//           `Item ${itemIndex} (${item.itemCode}): Missing or invalid item ID`
 //         );
 //       }
-//       if (!item.warehouse) {
+      
+//       if (!item.warehouse || !Types.ObjectId.isValid(item.warehouse)) {
 //         throw new Error(
-//           `Missing warehouse ObjectId for row ${i + 1} with code: ${item.itemCode}`
-//         );
-//       }
-//       if (!Types.ObjectId.isValid(item.warehouse)) {
-//         throw new Error(
-//           `Invalid warehouse ObjectId for row ${i + 1}: ${item.warehouse}`
+//           `Item ${itemIndex} (${item.itemCode}): Missing or invalid warehouse ID`
 //         );
 //       }
 //     }
 
 //     // ----- Validation: Batch-managed Items -----
-//     for (const [i, item] of grnData.items.entries()) {
-//       if (item.managedBy && item.managedBy.toLowerCase() === "batch") {
+//     for (const [i, item] of cleanGRNData.items.entries()) {
+//       if (item.managedBy?.toLowerCase() === "batch") {
 //         const totalBatchQty = (item.batches || []).reduce(
-//           (sum, batch) => sum + (Number(batch.batchQuantity) || 0),
+//           (sum, batch) => sum + Number(batch.batchQuantity || 0),
 //           0
 //         );
-//         if (totalBatchQty !== Number(item.quantity)) {
+        
+//         if (totalBatchQty !== Number(item.receivedQuantity || 0)) {
 //           throw new Error(
-//             `Batch quantity mismatch for item row ${i + 1} (${item.itemCode}): total batch quantity (${totalBatchQty}) does not equal item quantity (${item.quantity}).`
+//             `Batch item ${i + 1} (${item.itemCode}): Batch total (${totalBatchQty}) doesn't match received (${item.receivedQuantity})`
 //           );
 //         }
 //       }
 //     }
 
 //     // ----- Create GRN Document -----
-//     const [grn] = await GRN.create([grnData], { session });
-//     console.log("GRN created with _id:", grn._id);
+//     const [grn] = await GRN.create([cleanGRNData], { session });
 
 //     // ----- Update Inventory & Log Stock Movements -----
-//     for (const item of grnData.items) {
-//       if (!item.stockAdded) {
-//         if (item.batches && item.batches.length > 0) {
-//           // Batch-managed items.
-//           for (const batch of item.batches) {
-//             let inventoryDoc = await Inventory.findOne({
-//               item: item.item,
-//               warehouse: item.warehouse,
-//             }).session(session);
-//             if (!inventoryDoc) {
-//               inventoryDoc = await Inventory.create(
-//                 [
-//                   {
-//                     item: item.item,
-//                     warehouse: item.warehouse,
-//                     onOrder: 0,
-//                     batches: [
-//                       {
-//                         batchNumber: batch.batchNumber,
-//                         expiryDate: batch.expiryDate,
-//                         manufacturer: batch.manufacturer,
-//                         quantity: batch.batchQuantity,
-//                         unitPrice: item.unitPrice,
-//                       },
-//                     ],
-//                   },
-//                 ],
-//                 { session }
-//               );
-//             } else {
-//               const existingBatch = inventoryDoc.batches.find(
-//                 (b) => b.batchNumber === batch.batchNumber
-//               );
-//               if (existingBatch) {
-//                 existingBatch.quantity += batch.batchQuantity;
-//               } else {
-//                 inventoryDoc.batches.push({
-//                   batchNumber: batch.batchNumber,
-//                   expiryDate: batch.expiryDate,
-//                   manufacturer: batch.manufacturer,
-//                   quantity: batch.batchQuantity,
-//                   unitPrice: item.unitPrice,
-//                 });
-//               }
-//               await inventoryDoc.save({ session });
-//             }
-//             // Log stock movement for the batch.
-//             await StockMovement.create(
-//               [
-//                 {
-//                   item: item.item,
-//                   warehouse: item.warehouse,
-//                   movementType: "IN",
-//                   quantity: batch.batchQuantity,
-//                   reference: grn._id,
-//                   remarks: `Stock updated via GRN for batch ${batch.batchNumber}`,
-//                 },
-//               ],
-//               { session }
-//             );
+//     for (const item of cleanGRNData.items) {
+//       const itemId = new Types.ObjectId(item.item);
+//       const warehouseId = new Types.ObjectId(item.warehouse);
+//       const receivedQty = Number(item.receivedQuantity) || 0;
+//       const unitPrice = Number(item.unitPrice) || 0;
+      
+//       // Batch-managed items
+//       if (item.managedBy?.toLowerCase() === "batch" && item.batches?.length > 0) {
+//         for (const batch of item.batches) {
+//           if (!batch.batchNumber?.trim()) {
+//             throw new Error(`Batch number required for item ${item.itemCode}`);
 //           }
-//           // For batch-managed items, reduce the onOrder value.
+          
+//           const batchQty = Number(batch.batchQuantity) || 0;
+          
+//           // Find or create inventory
 //           let inventoryDoc = await Inventory.findOne({
-//             item: item.item,
-//             warehouse: item.warehouse,
+//             item: itemId,
+//             warehouse: warehouseId
 //           }).session(session);
-//           if (inventoryDoc) {
-//             inventoryDoc.onOrder = Math.max((inventoryDoc.onOrder || 0) - item.quantity, 0);
+          
+//           if (!inventoryDoc) {
+//             inventoryDoc = await Inventory.create([{
+//               item: itemId,
+//               warehouse: warehouseId,
+//               quantity: batchQty,
+//               onOrder: 0,
+//               batches: [{
+//                 batchNumber: batch.batchNumber,
+//                 expiryDate: batch.expiryDate,
+//                 manufacturer: batch.manufacturer,
+//                 quantity: batchQty,
+//                 unitPrice: unitPrice,
+//               }]
+//             }], { session })[0];
+//           } else {
+//             // Update existing batch or add new one
+//             const existingBatch = inventoryDoc.batches.find(
+//               b => b.batchNumber === batch.batchNumber
+//             );
+            
+//             if (existingBatch) {
+//               existingBatch.quantity += batchQty;
+//             } else {
+//               inventoryDoc.batches.push({
+//                 batchNumber: batch.batchNumber,
+//                 expiryDate: batch.expiryDate,
+//                 manufacturer: batch.manufacturer,
+//                 quantity: batchQty,
+//                 unitPrice: unitPrice,
+//               });
+//             }
+            
+//             inventoryDoc.quantity += batchQty;
 //             await inventoryDoc.save({ session });
 //           }
-//         } else {
-//           // For non-batch-managed items.
-//           await Inventory.updateOne(
-//             { item: item.item, warehouse: item.warehouse },
-//             { $inc: { quantity: Number(item.quantity), onOrder: -Number(item.quantity) } },
-//             { upsert: true, session }
-//           );
-//           await StockMovement.create(
-//             [
-//               {
-//                 item: item.item,
-//                 warehouse: item.warehouse,
-//                 movementType: "IN",
-//                 quantity: item.quantity,
-//                 reference: grn._id,
-//                 remarks: "Stock updated via GRN",
-//               },
-//             ],
-//             { session }
-//           );
+          
+//           // Create stock movement
+//           await StockMovement.create([{
+//             item: itemId,
+//             warehouse: warehouseId,
+//             movementType: "IN",
+//             quantity: batchQty,
+//             reference: grn._id,
+//             remarks: `Batch ${batch.batchNumber} received via GRN`,
+//             batchNumber: batch.batchNumber
+//           }], { session });
 //         }
-//         item.stockAdded = true;
+//       } 
+//       // Non-batch items
+//       else {
+//         // Update inventory
+//         await Inventory.updateOne(
+//           { item: itemId, warehouse: warehouseId },
+//           { 
+//             $inc: { 
+//               quantity: receivedQty,
+//               onOrder: -receivedQty
+//             }
+//           },
+//           { upsert: true, session }
+//         );
+        
+//         // Create stock movement
+//         await StockMovement.create([{
+//           item: itemId,
+//           warehouse: warehouseId,
+//           movementType: "IN",
+//           quantity: receivedQty,
+//           reference: grn._id,
+//           remarks: "Stock received via GRN"
+//         }], { session });
 //       }
 //     }
 
@@ -481,214 +504,71 @@ export async function POST(req) {
 //     if (purchaseOrderId) {
 //       const po = await PurchaseOrder.findById(purchaseOrderId).session(session);
 //       if (!po) {
-//         throw new Error(
-//           `Purchase Order with id ${purchaseOrderId} not found. Aborting GRN save.`
-//         );
+//         throw new Error(`Purchase Order ${purchaseOrderId} not found`);
 //       }
-//       let allItemsReceived = true;
+      
+//       // Create map of received quantities by item ID
+//       const receivedMap = new Map();
+//       for (const item of cleanGRNData.items) {
+//         const itemId = item.item.toString();
+//         receivedMap.set(itemId, (receivedMap.get(itemId) || 0) + Number(item.receivedQuantity || 0));
+//       }
+      
+//       // Track PO status
+//       let allItemsFullyReceived = true;
+//       let anyItemsReceived = false;
+      
+//       // Update PO items
 //       for (const poItem of po.items) {
-//         poItem.receivedQuantity = poItem.receivedQuantity || 0;
-//         const grnItem = grnData.items.find(
-//           (i) => i.item.toString() === poItem.item.toString()
-//         );
-//         if (grnItem) {
-//           poItem.receivedQuantity += Number(grnItem.quantity) || 0;
-//         }
-//         const originalQty = Number(poItem.orderedQuantity) || 0;
-//         const remaining = Math.max(originalQty - poItem.receivedQuantity, 0);
-//         poItem.quantity = remaining; // pending quantity
-//         console.log(
-//           `PO item ${poItem.item.toString()} - ordered: ${originalQty}, received: ${poItem.receivedQuantity}, remaining: ${remaining}`
-//         );
-//         if (Math.abs(remaining) > 0.01) {
-//           allItemsReceived = false;
-//         }
+//         const poItemId = poItem.item.toString();
+//         const receivedQty = receivedMap.get(poItemId) || 0;
+        
+//         // Update received quantity
+//         poItem.receivedQuantity = (poItem.receivedQuantity || 0) + receivedQty;
+        
+//         // Calculate remaining
+//         const orderedQty = Number(poItem.orderedQuantity) || 0;
+//         const remainingQty = Math.max(0, orderedQty - poItem.receivedQuantity);
+//         poItem.pendingQuantity = remainingQty;
+        
+//         // Update status flags
+//         if (remainingQty > 0) allItemsFullyReceived = false;
+//         if (receivedQty > 0) anyItemsReceived = true;
 //       }
-//       po.orderStatus = allItemsReceived ? "Close" : "Open";
-//       po.stockStatus = allItemsReceived ? "Updated" : "Adjusted";
-//       console.log(`Final PO status: orderStatus=${po.orderStatus}, stockStatus=${po.stockStatus}`);
+      
+//       // Update PO status
+//       if (allItemsFullyReceived) {
+//         po.orderStatus = "Completed";
+//       } else if (anyItemsReceived) {
+//         po.orderStatus = "PartiallyReceived";
+//       } else {
+//         po.orderStatus = "Open";
+//       }
+      
 //       await po.save({ session });
 //     }
 
 //     await session.commitTransaction();
 //     session.endSession();
+    
 //     return new Response(
-//       JSON.stringify({ message: "GRN processed and inventory updated", grnId: grn._id }),
+//       JSON.stringify({ 
+//         success: true,
+//         message: "GRN processed successfully",
+//         grnId: grn._id 
+//       }),
 //       { status: 200, headers: { "Content-Type": "application/json" } }
 //     );
 //   } catch (error) {
 //     await session.abortTransaction();
 //     session.endSession();
-//     console.error("Error processing GRN:", error.stack || error);
+    
 //     return new Response(
-//       JSON.stringify({ message: "Error processing GRN", error: error.message }),
-//       { status: 500, headers: { "Content-Type": "application/json" } }
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-// import mongoose from "mongoose"; 
-// import dbConnect from "@/lib/db";
-// import GRN from "@/models/grnModels";
-// import PurchaseOrder from "@/models/PurchaseOrder";
-// import Inventory from "@/models/Inventory";
-// import StockMovement from "@/models/StockMovement";
-
-// const { Types } = mongoose;
-
-// export async function POST(req) {
-//   await dbConnect();
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-//   try {
-//     const grnData = await req.json();
-//     console.log("Received GRN Data:", grnData);
-
-//     // Validate each GRN item.
-//     for (const [i, item] of grnData.items.entries()) {
-//       if (!item.item) {
-//         throw new Error(`Missing item ObjectId for row ${i + 1} with code: ${item.itemCode}`);
-//       }
-//       if (!item.warehouse) {
-//         throw new Error(`Missing warehouse ObjectId for row ${i + 1} with code: ${item.itemCode}`);
-//       }
-//       if (!Types.ObjectId.isValid(item.warehouse)) {
-//         throw new Error(`Invalid warehouse ObjectId for row ${i + 1}: ${item.warehouse}`);
-//       }
-//     }
-
-//     // Save the GRN document.
-//     const [grn] = await GRN.create([grnData], { session });
-//     console.log("GRN created with _id:", grn._id);
-
-//     // Update inventory and log stock movements.
-//     for (const item of grnData.items) {
-//       if (!item.stockAdded) {
-//         await Inventory.updateOne(
-//           { item: item.item, warehouse: item.warehouse },
-//           { $inc: { quantity: item.quantity } },
-//           { upsert: true, session }
-//         );
-//         await StockMovement.create(
-//           [{
-//             item: item.item,
-//             warehouse: item.warehouse,
-//             movementType: "IN",
-//             quantity: item.quantity,
-//             reference: grn._id,
-//             remarks: "Stock updated via GRN",
-//           }],
-//           { session }
-//         );
-//         item.stockAdded = true;
-//       }
-//     }
-
-//     // Update the linked Purchase Order if available.
-//     if (grnData.purchaseOrderId) {
-//       const po = await PurchaseOrder.findById(grnData.purchaseOrderId).session(session);
-//       if (po) {
-//         let allItemsFulfilled = true;
-//         for (const poItem of po.items) {
-//           console.log(
-//             `Before update - PO item ${poItem.item}: orderedQuantity=${poItem.orderedQuantity}, receivedQuantity=${poItem.receivedQuantity}, pending=${poItem.quantity}`
-//           );
-
-//           // Find the matching GRN item for this PO item.
-//           const grnItem = grnData.items.find(
-//             (i) => i.item.toString() === poItem.item.toString()
-//           );
-//           // Ensure receivedQuantity is defined.
-//           poItem.receivedQuantity = poItem.receivedQuantity || 0;
-//           if (grnItem) {
-//             console.log(`Matching GRN item found for PO item ${poItem.item} with quantity=${grnItem.quantity}`);
-//             poItem.receivedQuantity += Number(grnItem.quantity) || 0;
-//           }
-//           // Determine the original quantity: if orderedQuantity is set (>0), use it; otherwise, use the current pending quantity.
-//           const originalQuantity = (Number(poItem.orderedQuantity) > 0)
-//             ? Number(poItem.orderedQuantity)
-//             : Number(poItem.quantity);
-//           const received = Number(poItem.receivedQuantity) || 0;
-//           const remaining = Math.max(originalQuantity - received, 0);
-//           poItem.quantity = remaining;
-//           console.log(
-//             `After update - PO item ${poItem.item}: original=${originalQuantity}, received=${received}, remaining=${remaining}`
-//           );
-//           if (remaining > 0) {
-//             allItemsFulfilled = false;
-//           }
-//         }
-//         // Update PO status based on fulfillment.
-//         po.orderStatus = allItemsFulfilled ? "Close" : "Open";
-//         // Use a valid enum value; change "Partially Updated" to "Adjusted" (or any allowed value).
-//         po.stockStatus = allItemsFulfilled ? "Updated" : "Adjusted";
-//         await po.save({ session });
-//       }
-//     }
-
-//     await session.commitTransaction();
-//     session.endSession();
-//     return new Response(
-//       JSON.stringify({ message: "GRN processed and inventory updated", grnId: grn._id }),
-//       { status: 200, headers: { "Content-Type": "application/json" } }
-//     );
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     console.error("Error processing GRN:", error.stack || error);
-//     return new Response(
-//       JSON.stringify({ message: "Error processing GRN", error: error.message }),
-//       { status: 500, headers: { "Content-Type": "application/json" } }
-//     );
-//   }
-// }
-
-
-
-export async function GET(req) {
-  try {
-    await dbConnect();
-    const grns = await GRN.find({});
-    return new Response(JSON.stringify(grns), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Error fetching GRNs:", error);
-    return new Response(
-      JSON.stringify({ message: "Error fetching GRNs", error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-}
-
-// // POST /api/grn: Create a new GRN
-// export async function POST(req) {
-//   try {
-//     await dbConnect();
-//     // const data = await req.json();
-//         const body = await req.json();
-//         const quotation = await GRN.create(body);
-//     // const newGRN = new GRN(data);
-//     // await newGRN.save();
-//     return new Response(
-//       JSON.stringify({ message: "GRN created successfully", data: quotation }),
-//       {
-//         status: 201,
-//         headers: { "Content-Type": "application/json" },
-//       }
-//     );
-//   } catch (error) {
-//     console.error("Error creating GRN:", error);
-//     return new Response(
-//       JSON.stringify({ message: "Error creating GRN", error: error.message }),
+//       JSON.stringify({ 
+//         success: false,
+//         message: "GRN processing failed",
+//         error: error.message 
+//       }),
 //       { status: 500, headers: { "Content-Type": "application/json" } }
 //     );
 //   }

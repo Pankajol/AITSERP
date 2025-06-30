@@ -269,7 +269,7 @@ export default function PurchaseOrderList() {
           // Save the updated order to sessionStorage.
           sessionStorage.setItem("purchaseOrderData", JSON.stringify(orderWithUpdatedItems));
           // Navigate to the GRN page.
-          router.push("/admin/GRN");
+          router.push("/admin/grn-view/new");
         }
         // Example usage:
         copyOrderToGRN(order);
@@ -325,7 +325,7 @@ export default function PurchaseOrderList() {
           // Save the updated order to sessionStorage.
           sessionStorage.setItem("purchaseInvoiceData", JSON.stringify(orderWithUpdatedItems));
           // Navigate to the GRN page.
-          router.push("/admin/purchase-invoice");
+          router.push("/admin/purchaseInvoice-view/new");
         }
         // Example usage:
         copyOrderToInvoice(order);
@@ -387,7 +387,7 @@ export default function PurchaseOrderList() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold mb-6 text-center">Purchase Orders</h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/purchase-order">
+        <Link href="/admin/purchase-order-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New Order
@@ -398,7 +398,7 @@ export default function PurchaseOrderList() {
         <table className="min-w-full bg-white shadow-md rounded border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
-              <th className="py-3 px-4 border-b">Ref Number</th>
+              <th className="py-3 px-4 border-b">document No.</th>
               <th className="py-3 px-4 border-b">Supplier Name</th>
               <th className="py-3 px-4 border-b">Posting Date</th>
               <th className="py-3 px-4 border-b">Status</th>
@@ -409,7 +409,7 @@ export default function PurchaseOrderList() {
           <tbody>
             {orders.map((order) => (
               <tr key={order._id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 border-b text-center">{order.refNumber}</td>
+                <td className="py-3 px-4 border-b text-center">{order.documentNumber}</td>
                 <td className="py-3 px-4 border-b text-center">{order.supplierName}</td>
                 <td className="py-3 px-4 border-b text-center">
                   {order.postingDate ? new Date(order.postingDate).toLocaleDateString() : ""}
@@ -419,7 +419,7 @@ export default function PurchaseOrderList() {
                 <td className="py-3 px-4 border-b">
                   <div className="flex justify-center space-x-2">
                     {/* View Button */}
-                    <Link href={`/admin/purchase-order-view/${order._id}`}>
+                    <Link href={`/admin/purchase-order-view/view/${order._id}`}>
                       <button
                         className="flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition duration-200"
                         title="View Details"
@@ -428,14 +428,14 @@ export default function PurchaseOrderList() {
                       </button>
                     </Link>
                     {/* Edit Button */}
-                    <Link href={`/admin/purchase-order-view/new?editId=${order._id}`}>
-                      <button
-                        className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
-                        title="Edit"
-                      >
-                        <FaEdit />
-                      </button>
-                    </Link>
+                       <Link href={`/admin/purchase-order-view/new?editId=${order._id}`}>
+                    <button
+                      className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
+                      title="Edit"
+                    >
+                      <FaEdit />
+                    </button>
+                  </Link>
                     {/* Delete Button */}
                     <button
                       onClick={() => handleDelete(order._id)}

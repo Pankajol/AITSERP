@@ -11,41 +11,44 @@ const BatchSchema = new mongoose.Schema({
 
 // Schema for each delivery item (same as the Sales Order item)
 const ItemSchema = new mongoose.Schema({
-  item: { type: String, required: true },
-  itemCode: { type: String, required: true },
-  itemName: { type: String, required: true },
-  itemDescription: { type: String, required: true },
-  quantity: { type: Number, required: true }, // total quantity for the item
-  allowedQuantity: { type: Number, default: 0 },
-  unitPrice: { type: Number, required: true },
-  discount: { type: Number, default: 0 },
-  freight: { type: Number, default: 0 },
+item: { type: mongoose.Schema.Types.ObjectId, ref: "Item", required: true },
+     itemCode: { type: String },
+     itemName: { type: String },
+     itemDescription: { type: String },
+     quantity: { type: Number, default: 0 },
+     orderedQuantity: { type: Number, default: 0 },
+     unitPrice: { type: Number, default: 0 },
+     discount: { type: Number, default: 0 },
+     freight: { type: Number, default: 0 },
+     gstRate: { type: Number, default: 0 },
+     taxOption: { type: String, enum: ["GST", "IGST"], default: "GST" },
+     priceAfterDiscount: { type: Number, default: 0 },
+     totalAmount: { type: Number, default: 0 },
+     gstAmount: { type: Number, default: 0 },
+     cgstAmount: { type: Number, default: 0 },
+     sgstAmount: { type: Number, default: 0 },
+     igstAmount: { type: Number, default: 0 },
+     tdsAmount: { type: Number, default: 0 },
+     warehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse" },
+     warehouseName: { type: String },
+     warehouseCode: { type: String },
+     stockAdded: { type: Boolean, default: false },
+         
  
-  priceAfterDiscount: { type: Number, required: true },
-  totalAmount: { type: Number, required: true },
-  gstAmount: { type: Number, default: 0 },
-  cgstAmount: { type: Number, default: 0 },
-  sgstAmount: { type: Number, default: 0 },
-  igstAmount: { type: Number, default: 0 },
-  tdsAmount: { type: Number },
-  batches: [BatchSchema],
-  warehouse: { type: String, required: true },
-  warehouseName: { type: String, required: true },
-  warehouseCode: { type: String, required: true },
-  errorMessage: { type: String },
-  taxOption: { type: String, enum: ["GST", "IGST"], default: "GST" },
-  igstAmount: { type: Number, default: 0 },
-  managedByBatch: { type: Boolean, default: true }
+     batches: [BatchSchema],
+     managedByBatch: { type: Boolean, default: true },
+  
+     removalReason: { type: String },
 });
 
 // Schema for the overall delivery
 const DeliverySchema = new mongoose.Schema({
   // Reference to the original Sales Order (if copied)
   salesOrderId: { type: mongoose.Schema.Types.ObjectId, ref: "SalesOrder" },
-  
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   customerCode: { type: String, required: true },
   customerName: { type: String, required: true },
-  contactPerson: { type: String, required: true },
+  contactPerson: { type: String},
   refNumber: { type: String },
   salesEmployee: { type: String },
   status: { type: String, enum: ["Pending", "Confirmed"], default: "Pending" },

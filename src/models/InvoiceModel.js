@@ -59,12 +59,14 @@ const InvoiceItemSchema = new mongoose.Schema(
 const PurchaseInvoiceSchema = new mongoose.Schema(
   {
     invoiceNumber: { type: String, unique: true },
+    supplier: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
     supplierCode: { type: String },
     supplierName: { type: String },
     contactPerson: { type: String },
     postingDate: { type: Date },
     validUntil: { type: Date },
     documentDate: { type: Date },
+    documentNumber: { type: String, unique: true }, // Unique document number for the invoice
     grn: { type: mongoose.Schema.Types.ObjectId, ref: "GRN" },
     purchaseOrder: { type: mongoose.Schema.Types.ObjectId, ref: "PurchaseOrder" },
     // New field to distinguish invoice types:

@@ -13,7 +13,7 @@ export async function POST(req) {
     console.log("Received Suppliers data:", data);
 
     // Validate required fields
-    if (!data.supplierCode || !data.supplierName || !data.emailId) {
+    if (!data.supplierCode || !data.supplierName ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

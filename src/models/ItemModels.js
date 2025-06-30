@@ -16,6 +16,7 @@ const ItemSchema = new mongoose.Schema(
     unitPrice: { type: Number, required: true },
     quantity: { type: Number, required: true },
     reorderLevel: { type: Number },
+    leadTime: { type: Number },
     itemType: { type: String },
     uom: { type: String },
     managedBy: { type: String, enum: ["batch", "serial"], default: "batch" },

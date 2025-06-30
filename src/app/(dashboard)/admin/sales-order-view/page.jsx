@@ -10,14 +10,20 @@ export default function SalesOrderList() {
   const [orders, setOrders] = useState([]);
   const router = useRouter();
 
+
+
+
+
+
+
   const fetchOrders = async () => {
     try {
       const res = await axios.get("/api/sales-order");
-      console.log("Fetched orders:", res.data);
-      // Expecting an object with a success flag and a data array.
-    //   if (res.data.success) {
-    //     setOrders(res.data);
-    //   }
+      console.log("Fetched orders:", res.data.data);
+      //Expecting an object with a success flag and a data array.
+      if (res.data.success) {
+        setOrders(res.data);
+      }
     setOrders(res.data);
     } catch (error) {
       console.error("Error fetching sales orders:", error);
@@ -47,18 +53,23 @@ export default function SalesOrderList() {
     //  router.push("/admin/sales-invoice");
 
     if (destination === "Delivery") {
-      const orderWithId = { ...order, salesOrderId: order._id };
-      sessionStorage.setItem("deliveryData", JSON.stringify(orderWithId));
-      router.push("/admin/delivery");
-    } else if (destination === "Invoice") {
-      const invoiceWithId = {...order,sourceId:order._id,sourceModel: "SalesOrder"}
+      const orderWithId = { ...order, salesOrderId: order._id,sourceModel: "SalesOrder" };
+      sessionStorage.setItem("deliveryData", JSON.stringify(order));
+      router.push("/admin/delivery-view/new");
+    }else if (destination === "Invoice") {
+      const invoiceWithId = {...order,salesOrderId:order._id, sourceModel: "SalesOrder" }
       sessionStorage.setItem("SalesInvoiceData", JSON.stringify(invoiceWithId));
-      router.push("/admin/sales-invoice");
+      router.push("/admin/sales-invoice-view/new");
     } 
     // else if (destination === "Debit-Note") {
     //   sessionStorage.setItem("debitNoteData", JSON.stringify(order));
     //   router.push("/admin/debit-note");
     // }
+
+
+
+
+
   };
 
   const CopyToDropdown = ({ handleCopyTo, order }) => {
@@ -105,7 +116,7 @@ export default function SalesOrderList() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold mb-6 text-center">Sales Orders</h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/sales-order">
+        <Link href="/admin/sales-order-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New Order
@@ -130,7 +141,8 @@ export default function SalesOrderList() {
                 <td className="py-3 px-4 border-b text-center">{order.refNumber}</td>
                 <td className="py-3 px-4 border-b text-center">{order.customerName}</td>
                 <td className="py-3 px-4 border-b text-center">
-                  {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : ""}
+                  {order.postingDate ?  new Date(order.postingDate).toLocaleDateString("en-GB")
+                    : ""}
                 </td>
                 <td className="py-3 px-4 border-b text-center">{order.status}</td>
                 <td className="py-3 px-4 border-b text-center">{order.grandTotal}</td>
@@ -146,7 +158,7 @@ export default function SalesOrderList() {
                       </button>
                     </Link>
                     {/* Edit Button */}
-                    <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
+                  <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
                       <button
                         className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
                         title="Edit"

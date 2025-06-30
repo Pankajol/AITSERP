@@ -189,6 +189,16 @@ export default function GRNForm() {
       return { ...prev, items: updatedItems };
     });
   }, []);
+  
+  
+  
+    const removeItemRow = useCallback((index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  }, []);
+  
 
   const addItemRow = useCallback(() => {
     setGrnData((prev) => ({
@@ -490,7 +500,9 @@ useEffect(() => {
       toast.error(error.response?.data?.message || "Error saving GRN");
     }
   }, [grnData, summary]);
-  
+    const handleRemoveItem = useCallback(i => {
+    setGrnData(prev => ({ ...prev, items: prev.items.filter((_, idx) => idx !== i) }));
+  }, []);
 
   const handleCancel = useCallback(() => {
     setGrnData(initialGRNState);
@@ -662,7 +674,9 @@ useEffect(() => {
           items={grnData.items}
           onItemChange={handleItemChange}
           onAddItem={addItemRow}
+          
           onItemSelect={handleItemSelect}
+          onRemoveItem={removeItemRow}
         />
       </div>
       {/* Batch Modal Trigger – render only for items with an item ID and managedBy equal to "batch" */}

@@ -12,7 +12,7 @@ export async function GET() {
       .limit(1);
 
     // Default to "ITEM-0000" if no items exist
-    const lastItemCode = lastItem?.itemCode || "ITEM-0000";
+    const lastItemCode = lastItem?.itemCode || "ITEM-000";
 
     return NextResponse.json({ lastItemCode });
   } catch (error) {

@@ -178,6 +178,8 @@ export default function AdminSidebar({ children }) {
           {/* Stock */}
           <Section title="Stock" icon={<HiOutlineCube />} isOpen={openMenu==='Stock'} onToggle={()=>toggleMenu('Stock')}>
             <Item href="/admin/InventoryView" icon={<HiOutlineLibrary />} label="Inventory View" />
+             <Item href="/admin/InventoryEntry" icon={<HiOutlineLibrary />} label="Inventory Entry" />
+              <Item href="/admin/InventoryView" icon={<HiOutlineLibrary />} label="Inventory View" />
           </Section>
 
           {/* Payment */}

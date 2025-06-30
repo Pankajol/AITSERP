@@ -707,6 +707,7 @@ function ItemManagement() {
     unitPrice: "",
     quantity: "",
     reorderLevel: "",
+    leadTime: "",
     itemType: "",
     uom: "",
     managedBy: "",
@@ -724,7 +725,7 @@ function ItemManagement() {
     includeQualityCheck: false,
     qualityCheckDetails: [],
     includeGST: true,
-    includeIGST: false,
+    includeIGST: true,
     gstCode: "",
     gstName: "",
     gstRate: "",
@@ -758,19 +759,27 @@ function ItemManagement() {
   };
 
   // Generate item code for new items
-  const generateItemCode = async () => {
-    try {
-      const res = await axios.get("/api/lastItemCode");
-      const lastCode = res.data.lastItemCode || "ITEM-0000";
-      const lastNumber = parseInt(lastCode.split("-")[1], 10) || 0;
-      const newNumber = lastNumber + 1;
-      const generatedCode = `ITEM-${newNumber.toString().padStart(4, "0")}`;
-      setItemDetails(prev => ({ ...prev, itemCode: generatedCode }));
-    } catch (error) {
-      console.error("Failed to generate code:", error);
-      setItemDetails(prev => ({ ...prev, itemCode: "ITEM-0000" }));
+const generateItemCode = async () => {
+  try {
+    const res = await axios.get("/api/lastItemCode");
+    const lastCode = res.data.lastItemCode || "ITEM000";
+
+    // Validate code format like ITEM001
+    if (!/^ITEM\d{3}$/.test(lastCode)) {
+      throw new Error("No valid items found in the system");
     }
-  };
+
+    const lastNumber = parseInt(lastCode.slice(4), 10) || 0; // get the number part
+    const newNumber = lastNumber + 1;
+    const generatedCode = `ITEM${newNumber.toString().padStart(3, "0")}`;
+
+    setItemDetails(prev => ({ ...prev, itemCode: generatedCode }));
+  } catch (error) {
+    console.error("Failed to generate code:", error.message);
+    setItemDetails(prev => ({ ...prev, itemCode: "ITEM000" }));
+  }
+};
+
 
   // Handle form field changes
   const handleItemDetailsChange = (e) => {
@@ -945,20 +954,20 @@ function ItemManagement() {
                 <th className="py-3 px-4 text-left">Item Name</th>
                 <th className="py-3 px-4 text-left">Category</th>
                 <th className="py-3 px-4 text-left">Price</th>
-                <th className="py-3 px-4 text-left">Stock</th>
+                {/* <th className="py-3 px-4 text-left">Stock</th> */}
                 <th className="py-3 px-4 text-left">Status</th>
                 <th className="py-3 px-4 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
+                filteredItems.reverse().map((item) => (
                   <tr key={item._id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">{item.itemCode}</td>
                     <td className="py-3 px-4">{item.itemName}</td>
                     <td className="py-3 px-4">{item.category}</td>
                     <td className="py-3 px-4">₹{Number(item.unitPrice).toFixed(2)}</td>
-                    <td className="py-3 px-4">{item.quantity}</td>
+                    {/* <td className="py-3 px-4">{item.quantity}</td> */}
                     <td className="py-3 px-4">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
@@ -1068,7 +1077,7 @@ function ItemManagement() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity <span className="text-red-500">*</span>
+                minimum stock <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -1094,6 +1103,22 @@ function ItemManagement() {
                 className="w-full p-2 border border-gray-300 rounded-md"
               />
             </div>
+
+
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                LeadTime
+              </label>
+              <input
+                type="number"
+                name="leadTime"
+                value={itemDetails.leadTime}
+                onChange={handleItemDetailsChange}
+                min="1"
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            
             
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">

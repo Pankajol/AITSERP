@@ -44,7 +44,7 @@ export default function InvoiceView() {
   const handleCopyTo = (invoice, destination) => {
     if (destination === "debitNote") {
       sessionStorage.setItem("invoiceData", JSON.stringify(invoice));
-      router.push("/admin/debit-note");
+      router.push("/admin/debit-notes-view/new");
     }
   };
 
@@ -85,7 +85,7 @@ export default function InvoiceView() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold mb-6 text-center">Invoice List</h1>
       <div className="flex justify-end mb-4">
-        <Link href="/admin/purchase-invoice">
+        <Link href="/admin/purchaseInvoice-view/new">
           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
             <FaEdit className="mr-2" />
             Create New Invoice

@@ -2,33 +2,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import useSearch from "@/hooks/useSearch"; // Assuming you have the `useSearch` hook for searching
+import useSearch from "@/hooks/useSearch";
 
 const GroupSearch = ({ onSelectGroup }) => {
-  const [groups, setGroups] = useState([]); // Initialize groups state
-  const [showGroupDropdown, setShowGroupDropdown] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState(null);
-  const dropdownRef = useRef(null); // To detect outside clicks
+  const dropdownRef = useRef(null);
 
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get("/api/groupscreate");
-        setGroups(response.data); // Update the groups state with fetched data
-      } catch (err) {
-        setError("Error fetching groups. Please try again.");
-        console.error("Error fetching groups:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGroups();
-  }, []);
-
-  // Fetch groups dynamically based on the search query
   const groupSearch = useSearch(async (query) => {
     const res = await fetch(`/api/groupscreate?search=${query}`);
     return res.ok ? await res.json() : [];
@@ -38,64 +20,192 @@ const GroupSearch = ({ onSelectGroup }) => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowGroupDropdown(false);
+        setShowDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
-    onSelectGroup(group); // Pass selected group to parent
-    setShowGroupDropdown(false); // Hide dropdown after selection
+    setInputValue(group.name);
+    onSelectGroup(group);
+    setShowDropdown(false);
+  };
+
+  const handleCustomInput = () => {
+    const customGroup = { _id: null, name: inputValue };
+    setSelectedGroup(customGroup);
+    onSelectGroup(customGroup);
+    setShowDropdown(false);
+  };
+
+  const handleClear = () => {
+    setSelectedGroup(null);
+    setInputValue("");
+    onSelectGroup(null);
   };
 
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Group Search Input */}
-      <div className="relative mb-4">
+      <div className="flex items-center">
         <input
           type="text"
-          placeholder="Search Group"
-          value={selectedGroup?.name || groupSearch.query}
+          placeholder="Type or select group"
+          value={inputValue}
           onChange={(e) => {
-            groupSearch.handleSearch(e.target.value); // Trigger search
-            setShowGroupDropdown(true);
+            const val = e.target.value;
+            setInputValue(val);
+            groupSearch.handleSearch(val);
+            setShowDropdown(true);
           }}
-          onFocus={() => setShowGroupDropdown(true)}
-          className="border px-4 py-2 w-full"
+          onFocus={() => setShowDropdown(true)}
+          className="border px-4 py-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
         />
-        {showGroupDropdown && (
-          <div className="absolute border bg-white w-full max-h-40 overflow-y-auto z-10">
-            {groupSearch.loading && <p className="p-2">Loading...</p>}
-            {groupSearch.results.length === 0 && !groupSearch.loading && (
-              <p className="p-2 text-gray-500">No groups found</p>
-            )}
-            {groupSearch.results.map((group) => (
-              <div
-                key={group._id}
-                onClick={() => handleGroupSelect(group)}
-                className={`p-2 cursor-pointer hover:bg-gray-200 ${
-                  selectedGroup?._id === group._id ? "bg-blue-100" : ""
-                }`}
-              >
-                {group.name}
-              </div>
-            ))}
-          </div>
+        {inputValue && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="ml-2 text-gray-500 hover:text-red-600"
+            title="Clear"
+          >
+            ✕
+          </button>
         )}
       </div>
-      {/* Error Message */}
-      {error && <p className="text-red-500">{error}</p>}
+
+      {showDropdown && (
+        <div className="absolute border bg-white w-full max-h-40 overflow-y-auto z-10 rounded-md shadow-md mt-1">
+          {groupSearch.loading && <p className="p-2">Loading...</p>}
+          {!groupSearch.loading && groupSearch.results.length === 0 && (
+            <div
+              className="p-2 cursor-pointer text-blue-600 hover:bg-blue-50"
+              onClick={handleCustomInput}
+            >
+              ➕ Create "{inputValue}"
+            </div>
+          )}
+          {groupSearch.results.map((group) => (
+            <div
+              key={group._id}
+              onClick={() => handleGroupSelect(group)}
+              className={`p-2 cursor-pointer hover:bg-gray-200 ${
+                selectedGroup?._id === group._id ? "bg-blue-100" : ""
+              }`}
+            >
+              {group.name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-red-500 mt-1">{error}</p>}
     </div>
   );
 };
 
 export default GroupSearch;
+
+
+// "use client";
+
+// import React, { useState, useEffect, useRef } from "react";
+// import axios from "axios";
+// import useSearch from "@/hooks/useSearch"; // Assuming you have the `useSearch` hook for searching
+
+// const GroupSearch = ({ onSelectGroup }) => {
+//   const [groups, setGroups] = useState([]); // Initialize groups state
+//   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
+//   const [selectedGroup, setSelectedGroup] = useState(null);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState(null);
+//   const dropdownRef = useRef(null); // To detect outside clicks
+
+//   useEffect(() => {
+//     const fetchGroups = async () => {
+//       try {
+//         setLoading(true);
+//         const response = await axios.get("/api/groupscreate");
+//         setGroups(response.data); // Update the groups state with fetched data
+//       } catch (err) {
+//         setError("Error fetching groups. Please try again.");
+//         console.error("Error fetching groups:", err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchGroups();
+//   }, []);
+
+//   // Fetch groups dynamically based on the search query
+//   const groupSearch = useSearch(async (query) => {
+//     const res = await fetch(`/api/groupscreate?search=${query}`);
+//     return res.ok ? await res.json() : [];
+//   });
+
+//   // Hide dropdown on outside click
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+//         setShowGroupDropdown(false);
+//       }
+//     };
+
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => {
+//       document.removeEventListener("mousedown", handleClickOutside);
+//     };
+//   }, []);
+
+//   const handleGroupSelect = (group) => {
+//     setSelectedGroup(group);
+//     onSelectGroup(group); // Pass selected group to parent
+//     setShowGroupDropdown(false); // Hide dropdown after selection
+//   };
+
+//   return (
+//     <div ref={dropdownRef} className="relative">
+//       {/* Group Search Input */}
+//       <div className="relative mb-4">
+//         <input
+//           type="text"
+//           placeholder="Search Group"
+//           value={selectedGroup?.name || groupSearch.query}
+//           onChange={(e) => {
+//             groupSearch.handleSearch(e.target.value); // Trigger search
+//             setShowGroupDropdown(true);
+//           }}
+//           onFocus={() => setShowGroupDropdown(true)}
+//           className="border px-4 py-2 w-full"
+//         />
+//         {showGroupDropdown && (
+//           <div className="absolute border bg-white w-full max-h-40 overflow-y-auto z-10">
+//             {groupSearch.loading && <p className="p-2">Loading...</p>}
+//             {groupSearch.results.length === 0 && !groupSearch.loading && (
+//               <p className="p-2 text-gray-500">No groups found</p>
+//             )}
+//             {groupSearch.results.map((group) => (
+//               <div
+//                 key={group._id}
+//                 onClick={() => handleGroupSelect(group)}
+//                 className={`p-2 cursor-pointer hover:bg-gray-200 ${
+//                   selectedGroup?._id === group._id ? "bg-blue-100" : ""
+//                 }`}
+//               >
+//                 {group.name}
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//       {/* Error Message */}
+//       {error && <p className="text-red-500">{error}</p>}
+//     </div>
+//   );
+// };
+
+// export default GroupSearch;
 
 
 //  here the  code is work but show error and dropdown issue occures 

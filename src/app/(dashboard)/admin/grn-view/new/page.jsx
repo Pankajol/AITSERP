@@ -1,36 +1,18 @@
-// import React from 'react'
-// import GRNConversionForm from "@/components/GRNConversionForm"
-
-// function page() {
-//   return (
-//     <div>
-//       <GRNConversionForm />
-//     </div>
-//   )
-// }
-
-// export default page
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
 "use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import axios from "axios";
+import { Suspense } from "react";
 import SupplierSearch from "@/components/SupplierSearch";
 import ItemSection from "@/components/ItemSection";
-import { FaCheckCircle } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import supplier from "../../supplier/page";
 
-// Initial GRN state – managedBy will be set via the item master.
+// Initial GRN state
 const initialGRNState = {
-  _id: "",
+  supplier: "",
   supplierCode: "",
   supplierName: "",
   contactPerson: "",
@@ -52,19 +34,27 @@ const initialGRNState = {
       discount: 0,
       freight: 0,
       gstRate: 0,
-      taxOption: "GST", // or "IGST"
+      igstRate: 0,
+      cgstRate: 0,
+      sgstRate: 0,
+      taxOption: "GST",
       priceAfterDiscount: 0,
       totalAmount: 0,
       gstAmount: 0,
       cgstAmount: 0,
       sgstAmount: 0,
       igstAmount: 0,
-      managedBy: "", // will be updated from item master
+      managedBy: "",
       batches: [],
       errorMessage: "",
+      qualityCheckDetails: [],
+      warehouse: "",
+      warehouseCode: "",
+      warehouseName: "",
+      stockAdded: false,
     },
   ],
-  qualityCheckDetails: [],
+  // qualityCheckDetails: [],
   salesEmployee: "",
   remarks: "",
   freight: 0,
@@ -77,19 +67,18 @@ const initialGRNState = {
 
 function formatDateForInput(dateStr) {
   if (!dateStr) return "";
-  const ddMmYyyyRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
-  if (ddMmYyyyRegex.test(dateStr)) {
-    const [dd, mm, yyyy] = dateStr.split("-");
-    return `${yyyy}-${mm}-${dd}`;
-  }
+  const m = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
   const d = new Date(dateStr);
-  return !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
+  return isNaN(d) ? "" : d.toISOString().slice(0, 10);
 }
+
+
 
 function GRNFormWrapper() {
   return (
-<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
-      <GRNFormEdit />
+    <Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
+      <GRNForm />
     </Suspense>
   );
 }
@@ -97,273 +86,170 @@ function GRNFormWrapper() {
 
 
 
- function GRNFormEdit() {
+ function GRNForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const editId = searchParams.get("editId");
+  const search = useSearchParams();
+  const editId = search.get("editId");
   const isEdit = Boolean(editId);
+
+  // ← Make sure you declare this!
   const parentRef = useRef(null);
+
   const [grnData, setGrnData] = useState(initialGRNState);
   const [summary, setSummary] = useState({
     totalBeforeDiscount: 0,
     gstTotal: 0,
     grandTotal: 0,
   });
-  const [isCopied, setIsCopied] = useState(false);
-  const [showQualityCheckForm, setShowQualityCheckForm] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [selectedBatchItemIndex, setSelectedBatchItemIndex] = useState(null);
-  const [barcode, setBarcode] = useState("");
 
-  // Load GRN record if editing.
+
+
+
+ const poJSON = sessionStorage.getItem("purchaseOrderData");
+if (poJSON) {
+  const po = JSON.parse(poJSON);
+  setGrnData(prev => ({
+    ...prev,
+    ...po,
+    purchaseOrderId: po._id, // ✅ ensure this is set
+  }));
+  sessionStorage.removeItem("purchaseOrderData");
+  toast.info("Loaded PO into GRN");
+}
+
+  // Load existing GRN when editing
   useEffect(() => {
-    if (isEdit) {
-      axios
-        .get(`/api/grn/${editId}`)
-        .then((res) => {
-          if (res.data.success) {
-            const record = res.data.data;
-            setGrnData({
-              ...record,
-              postingDate: formatDateForInput(record.postingDate),
-              validUntil: formatDateForInput(record.validUntil),
-              documentDate: formatDateForInput(record.documentDate),
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching GRN for editing:", err);
-          toast.error("Error loading GRN data.");
-        });
-    }
-  }, [isEdit, editId]);
+    if (!isEdit) return;
+    axios
+      .get(`/api/grn/${editId}`)
+      .then((res) => {
+        if (res.data.success) {
+          const rec = res.data.data;
+          setGrnData({
+            ...rec,
+            postingDate: formatDateForInput(rec.postingDate),
+            validUntil: formatDateForInput(rec.validUntil),
+            documentDate: formatDateForInput(rec.documentDate),
+          });
+        } else {
+          toast.error("Failed to load GRN for editing");
+        }
+      })
+      .catch(() => toast.error("Error loading GRN"));
+  }, [editId, isEdit]);
 
-  // Debug: log current items to verify managedBy values.
-  useEffect(() => {
-    console.log("GRN Items:", grnData.items);
-  }, [grnData.items]);
-
+  // Basic input handler
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setGrnData((prev) => ({ ...prev, [name]: value }));
+    setGrnData((p) => ({ ...p, [name]: value }));
   }, []);
 
-  const handleSupplierSelect = useCallback((selectedSupplier) => {
-    setGrnData((prev) => ({
-      ...prev,
-      supplierCode: selectedSupplier.supplierCode || "",
-      supplierName: selectedSupplier.supplierName || "",
-      contactPerson: selectedSupplier.contactPersonName || "",
+  // Supplier select
+  const handleSupplierSelect = useCallback((s) => {
+    setGrnData((p) => ({
+      ...p,
+      supplier:      s._id, 
+      supplierCode: s.supplierCode,
+      supplierName: s.supplierName,
+      contactPerson: s.contactPersonName,
     }));
   }, []);
 
-  const handleQualityCheckChange = useCallback((index, value) => {
-    setGrnData((prev) => {
-      const updatedQC = [...prev.qualityCheckDetails];
-      updatedQC[index] = { ...updatedQC[index], actualValue: value };
-      return { ...prev, qualityCheckDetails: updatedQC };
-    });
-  }, []);
-
-  // When an item is selected, fetch its managedBy from the item master if needed.
-  const handleItemSelect = useCallback(async (index, selectedItem) => {
-    if (!selectedItem._id) {
-      toast.error("Selected item does not have a valid ID.");
-      return;
+  // Compute per-item
+  const computeItemValues = useCallback((it) => {
+    const q = Number(it.quantity) || 0;
+    const up = Number(it.unitPrice) || 0;
+    const dis = Number(it.discount) || 0;
+    const fr = Number(it.freight) || 0;
+    const net = up - dis;
+    const tot = net * q + fr;
+    if (it.taxOption === "GST") {
+      const rate = Number(it.gstRate) || 0;
+      const half = rate / 2;
+      const cg = (tot * half) / 100;
+      const sg = cg;
+      return {
+        priceAfterDiscount: net,
+        totalAmount: tot,
+        cgstAmount: cg,
+        sgstAmount: sg,
+        gstAmount: cg + sg,
+        igstAmount: 0,
+      };
     }
-    let managedBy = selectedItem.managedBy;
-    if (!managedBy || managedBy.trim() === "") {
-      try {
-        const res = await axios.get(`/api/items/${selectedItem._id}`);
-        if (res.data.success) {
-          managedBy = res.data.data.managedBy;
-          console.log(`Fetched managedBy for ${selectedItem.itemCode}:`, managedBy);
-        }
-      } catch (error) {
-        console.error("Error fetching item master details:", error);
-        managedBy = "";
-      }
-    } else {
-      console.log(`Using managedBy from selected item for ${selectedItem.itemCode}:`, managedBy);
-    }
-
-    // Calculate derived fields.
-    const unitPrice = Number(selectedItem.unitPrice) || 0;
-    const discount = Number(selectedItem.discount) || 0;
-    const freight = Number(selectedItem.freight) || 0;
-    const quantity = 1;
-    const taxOption = selectedItem.taxOption || "GST";
-    const gstRate = selectedItem.gstRate ? Number(selectedItem.gstRate) : 0;
-    const priceAfterDiscount = unitPrice - discount;
-    const totalAmount = quantity * priceAfterDiscount + freight;
-    const cgstRate = selectedItem.cgstRate ? Number(selectedItem.cgstRate) : gstRate / 2;
-    const sgstRate = selectedItem.sgstRate ? Number(selectedItem.sgstRate) : gstRate / 2;
-    const cgstAmount = totalAmount * (cgstRate / 100);
-    const sgstAmount = totalAmount * (sgstRate / 100);
-    const gstAmount = cgstAmount + sgstAmount;
-    const igstAmount = taxOption === "IGST" ? totalAmount * (gstRate / 100) : 0;
-
-    const updatedItem = {
-      item: selectedItem._id,
-      itemCode: selectedItem.itemCode || "",
-      itemName: selectedItem.itemName,
-      itemDescription: selectedItem.description || "",
-      unitPrice,
-      discount,
-      freight,
-      gstRate,
-      taxOption,
-      quantity,
-      priceAfterDiscount,
-      totalAmount,
-      gstAmount,
-      cgstAmount,
-      sgstAmount,
-      igstAmount,
-      managedBy, // set from the item master
-      // Only initialize batches if managedBy is exactly "batch"
-      batches: managedBy && managedBy.trim().toLowerCase() === "batch" ? [] : [],
+    const rate = Number(it.igstRate || it.gstRate) || 0;
+    const ig = (tot * rate) / 100;
+    return {
+      priceAfterDiscount: net,
+      totalAmount: tot,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      gstAmount: 0,
+      igstAmount: ig,
     };
-
-    if (selectedItem.qualityCheckDetails && selectedItem.qualityCheckDetails.length > 0) {
-      setGrnData((prev) => ({
-        ...prev,
-        qualityCheckDetails: selectedItem.qualityCheckDetails,
-      }));
-    } else {
-      setGrnData((prev) => ({
-        ...prev,
-        qualityCheckDetails: [
-          { parameter: "Weight", min: "", max: "", actualValue: "" },
-          { parameter: "Dimension", min: "", max: "", actualValue: "" },
-        ],
-      }));
-    }
-
-    setGrnData((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index] = { ...updatedItems[index], ...updatedItem };
-      return { ...prev, items: updatedItems };
-    });
   }, []);
 
+  // Add/remove rows
   const addItemRow = useCallback(() => {
-    setGrnData((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          item: "",
-          itemCode: "",
-          itemName: "",
-          itemDescription: "",
-          quantity: 0,
-          allowedQuantity: 0,
-          receivedQuantity: 0,
-          unitPrice: 0,
-          discount: 0,
-          freight: 0,
-          gstRate: 0,
-          taxOption: "GST",
-          priceAfterDiscount: 0,
-          totalAmount: 0,
-          gstAmount: 0,
-          cgstAmount: 0,
-          sgstAmount: 0,
-          igstAmount: 0,
-          managedBy: "",
-          batches: [],
-          errorMessage: "",
-        },
-      ],
-    }));
+    setGrnData((p) => ({ ...p, items: [...p.items, initialGRNState.items[0]] }));
+  }, []);
+  const removeItemRow = useCallback((i) => {
+    setGrnData((p) => ({ ...p, items: p.items.filter((_, idx) => idx !== i) }));
   }, []);
 
-  const handleItemChange = useCallback((index, e) => {
-    const { name } = e.target;
-    let newValue = e.target.value;
-    const numericFields = [
-      "quantity",
-      "receivedQuantity",
-      "unitPrice",
-      "discount",
-      "freight",
-      "gstRate",
-      "igstRate",
-    ];
-    if (numericFields.includes(name)) {
-      newValue = Number(newValue) || 0;
-    }
-    setGrnData((prev) => {
-      const updatedItems = [...prev.items];
-      const currentItem = { ...updatedItems[index] };
-      currentItem[name] = newValue;
-      // Recalculate derived values.
-      const unitPrice = Number(currentItem.unitPrice) || 0;
-      const discount = Number(currentItem.discount) || 0;
-      const quantity = Number(currentItem.quantity) || 1;
-      const freight = Number(currentItem.freight) || 0;
-      currentItem.priceAfterDiscount = unitPrice - discount;
-      currentItem.totalAmount = quantity * (unitPrice - discount) + freight;
-      updatedItems[index] = currentItem;
-      return { ...prev, items: updatedItems };
-    });
-  }, []);
+  // Item change
+  const handleItemChange = useCallback(
+    (i, e) => {
+      const { name, value } = e.target;
+      setGrnData((p) => {
+        const items = [...p.items];
+        items[i] = {
+          ...items[i],
+          [name]: ["quantity", "unitPrice", "discount", "freight", "gstRate", "igstRate"].includes(name)
+            ? Number(value) || 0
+            : value,
+        };
+        items[i] = { ...items[i], ...computeItemValues(items[i]) };
+        return { ...p, items };
+      });
+    },
+    [computeItemValues]
+  );
 
-  const handleBarcodeScan = useCallback(async () => {
-    if (!barcode) {
-      toast.error("Please enter a barcode.");
-      return;
-    }
-    try {
-      const response = await axios.get(`/api/barcode/${barcode}`);
-      if (response.data && response.data.success) {
-        const scannedItem = response.data.data;
-        addItemRow();
-        setTimeout(() => {
-          const newIndex = grnData.items.length;
-          handleItemSelect(newIndex, scannedItem);
-        }, 0);
-        toast.success("Item added via barcode.");
-      } else {
-        toast.error("Item not found for this barcode.");
+  // SKU select
+  const handleItemSelect = useCallback(
+    async (i, sku) => {
+      let mb = sku.managedBy || "";
+      if (!mb) {
+        try {
+          const res = await axios.get(`/api/items/${sku._id}`);
+          mb = res.data.success ? res.data.data.managedBy : "";
+        } catch {}
       }
-    } catch (error) {
-      console.error("Barcode scan error", error);
-      toast.error("Error scanning barcode.");
-    }
-  }, [barcode, grnData.items, addItemRow, handleItemSelect]);
-
-  // Check for items missing managedBy and fetch from item master.
-  const unfetchedCount = grnData.items.filter(
-    (item) => item.item && (!item.managedBy || item.managedBy.trim() === "")
-  ).length;
-
-  useEffect(() => {
-    async function checkManagedByForNewItems() {
-      const updatedItems = await Promise.all(
-        grnData.items.map(async (item) => {
-          if (item.item && (!item.managedBy || item.managedBy.trim() === "")) {
-            try {
-              const res = await axios.get(`/api/items/${item.item}`);
-              if (res.data.success) {
-                const masterData = res.data.data;
-                console.log(`Checked managedBy for ${item.itemCode}:`, masterData.managedBy);
-                return { ...item, managedBy: masterData.managedBy, fetchedManagedBy: true };
-              }
-            } catch (error) {
-              console.error("Error fetching managedBy for item", item.item, error);
-            }
-          }
-          return item;
-        })
-      );
-      setGrnData((prev) => ({ ...prev, items: updatedItems }));
-    }
-    if (unfetchedCount > 0) {
-      checkManagedByForNewItems();
-    }
-  }, [unfetchedCount]);
+      const base = {
+        item: sku._id,
+        itemCode: sku.itemCode,
+        itemName: sku.itemName,
+        itemDescription: sku.description || "",
+        quantity: 1,
+        unitPrice: sku.unitPrice,
+        discount: sku.discount || 0,
+        freight: sku.freight || 0,
+        gstRate: sku.gstRate || 0,
+        igstRate: sku.igstRate || 0,
+        taxOption: sku.taxOption || "GST",
+        managedBy: mb,
+      };
+      setGrnData((p) => {
+        const items = [...p.items];
+        items[i] = { ...initialGRNState.items[0], ...base, ...computeItemValues(base) };
+        return { ...p, items };
+      });
+    },
+    [computeItemValues]
+  );
 
   // Batch modal handlers.
   const openBatchModal = useCallback((itemIndex) => {
@@ -418,219 +304,258 @@ function GRNFormWrapper() {
     });
   }, [selectedBatchItemIndex]);
 
-  // Summary Calculation.
+
+  // Recompute summary
   useEffect(() => {
-    const totalBeforeDiscountCalc = grnData.items.reduce((acc, item) => {
-      const unitPrice = parseFloat(item.unitPrice) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const quantity = parseFloat(item.quantity) || 1;
-      return acc + (unitPrice - discount) * quantity;
-    }, 0);
-  
-    const totalItemsCalc = grnData.items.reduce((acc, item) => {
-      const unitPrice = parseFloat(item.unitPrice) || 0;
-      const discount = parseFloat(item.discount) || 0;
-      const quantity = parseFloat(item.quantity) || 1;
-      return acc + ((unitPrice - discount) * quantity);
-    }, 0);
-  
-    const gstTotalCalc = grnData.items.reduce((acc, item) => {
-      if (item.taxOption === "IGST") {
-        return acc + (parseFloat(item.igstAmount) || 0);
-      }
-      return acc + (parseFloat(item.gstAmount) || 0);
-    }, 0);
-  
-    const grandTotalCalc = totalItemsCalc + gstTotalCalc;
-    
-    setSummary({
-      totalBeforeDiscount: totalBeforeDiscountCalc,
-      gstTotal: gstTotalCalc,
-      grandTotal: grandTotalCalc,
-    });
+    const tb = grnData.items.reduce((s, it) => s + (it.priceAfterDiscount || 0) * (it.quantity || 0), 0);
+    const gstT = grnData.items.reduce(
+      (s, it) => s + (it.taxOption === "IGST" ? it.igstAmount : it.gstAmount),
+      0
+    );
+    const gr = tb + gstT + Number(grnData.freight) + Number(grnData.rounding);
+    setSummary({ totalBeforeDiscount: tb, gstTotal: gstT, grandTotal: gr });
   }, [grnData.items, grnData.freight, grnData.rounding]);
 
-  const handleSaveGRN = useCallback(async () => {
-    // Validate each item.
-    for (let item of grnData.items) {
-      const allowedQty = Number(item.allowedQuantity) || 0;
-      if (allowedQty > 0 && Number(item.quantity) > allowedQty) {
-        toast.error(
-          `For item ${item.itemCode}, GRN quantity (${item.quantity}) exceeds allowed quantity (${allowedQty}).`
+  // // Save or update
+  // const handleSaveGRN = useCallback(async () => {
+  //   try {
+  //     const payload = { ...grnData, ...summary };
+  //     if (isEdit) {
+  //       await axios.put(`/api/grn/${editId}`, payload);
+  //       toast.success("GRN updated");
+  //     } else {
+  //       await axios.post("/api/grn", payload);
+  //       toast.success("GRN saved");
+  //     }
+  //     router.push("/admin/grn-view");
+  //   } catch (err) {
+  //     toast.error(err.response?.data?.error || err.message);
+  //   }
+  // }, [grnData, summary, isEdit, editId, router]);
+
+  // // Copy to PO
+  // const handleCopyToPO = useCallback(() => {
+  //   sessionStorage.setItem("purchaseOrderData", JSON.stringify(grnData));
+  //   router.push("/admin/grn-view/new");
+  // }, [grnData, router]);
+
+
+// ⬇️  REPLACE the existing handleSaveGRN definition with this one
+// const handleSaveGRN = useCallback(async () => {
+//   try {
+//     /** -----------------------------------------------------------------
+//      * 1) Ensure each GRN line carries the quantity that was just received.
+//      *    (Back-end models often don’t default this, so do it explicitly.)
+//      * ----------------------------------------------------------------*/
+//     const itemsWithReceived = grnData.items.map(it => ({
+//       ...it,
+//       receivedQuantity: it.receivedQuantity || it.quantity || 0,
+//     }));
+
+//     const payload = { ...grnData, items: itemsWithReceived, ...summary, ...(purchaseOrderId ? { purchaseOrderId } : {}),  };
+//     let response;
+
+//     // ------------------------------------------------------------------
+//     // 2) Create vs. update the GRN itself
+//     // ------------------------------------------------------------------
+//     if (isEdit) {
+//       response = await axios.put(`/api/grn/${editId}`, payload);
+//     } else {
+//       response = await axios.post("/api/grn", payload);
+//     }
+
+//     const savedGRN = response.data.data;
+
+//     /** -----------------------------------------------------------------
+//      * 3) If the GRN was linked to a PO, synchronise that PO’s
+//      *    receivedQuantity and status in one go.
+//      * ----------------------------------------------------------------*/
+//     if (savedGRN.purchaseOrderId) {
+//       try {
+//         // Fetch current PO
+//         const { data: poRes } = await axios.get(
+//           `/api/purchase-order/${savedGRN.purchaseOrderId}`,
+//         );
+//         const po = poRes.data;
+
+//         // Map of new received quantities from *this* GRN
+//         const grnMap = new Map();
+//         savedGRN.items.forEach(({ itemCode, receivedQuantity, quantity }) => {
+//           grnMap.set(itemCode, receivedQuantity || quantity || 0);
+//         });
+
+//         // Map of previous received quantities if we’re editing
+//         let prevGrnMap = new Map();
+//         if (isEdit) {
+//           const { data: oldGrnRes } = await axios.get(`/api/grn/${editId}`);
+//           oldGrnRes.data.items.forEach(({ itemCode, receivedQuantity, quantity }) => {
+//             prevGrnMap.set(itemCode, receivedQuantity || quantity || 0);
+//           });
+//         }
+
+//         // Merge into PO lines
+//         const updatedItems = po.items.map(poItem => {
+//           const newQty = grnMap.get(poItem.itemCode) || 0;
+//           const prevQty = prevGrnMap.get(poItem.itemCode) || 0;
+//           const diff = newQty - prevQty; // add or subtract delta
+
+//           return {
+//             ...poItem,
+//             receivedQuantity: (poItem.receivedQuantity || 0) + diff,
+//           };
+//         });
+
+//         // Determine new PO status
+//         const statusAllReceived = updatedItems.every(
+//           ({ receivedQuantity, orderedQuantity }) =>
+//             receivedQuantity >= orderedQuantity,
+//         );
+//         const statusAnyReceived = updatedItems.some(
+//           ({ receivedQuantity }) => receivedQuantity > 0,
+//         );
+
+//         const newStatus = statusAllReceived
+//           ? "Completed"
+//           : statusAnyReceived
+//           ? "PartiallyReceived"
+//           : "Open";
+
+//         // Push update to PO
+//         await axios.put(`/api/purchase-order/${savedGRN.purchaseOrderId}`, {
+//           items: updatedItems,
+//           orderStatus: newStatus,
+//         });
+//       } catch (err) {
+//         console.error("Failed to update PO:", err);
+//         toast.error("GRN saved, but updating the linked Purchase Order failed");
+//       }
+//     }
+
+//     toast.success(isEdit ? "GRN updated" : "GRN saved");
+//     router.push("/admin/grn-view");
+//   } catch (err) {
+//     toast.error(err.response?.data?.error || err.message);
+//   }
+// }, [grnData, summary, isEdit, editId, router]);
+
+
+const handleSaveGRN = useCallback(async () => {
+  try {
+    const itemsWithReceived = grnData.items.map(it => ({
+      ...it,
+      receivedQuantity: it.receivedQuantity || it.quantity || 0,
+    }));
+
+    // Destructure to extract purchaseOrderId separately
+    const { purchaseOrderId, ...restData } = grnData;
+
+    // Only include purchaseOrderId in payload if it's valid (non-empty string)
+    const payload = {
+      ...restData,
+      items: itemsWithReceived,
+      ...summary,
+      ...(purchaseOrderId ? { purchaseOrderId } : {}), // ✅ Conditionally include
+    };
+
+    let response;
+
+    if (isEdit) {
+      response = await axios.put(`/api/grn/${editId}`, payload);
+    } else {
+      response = await axios.post("/api/grn", payload);
+    }
+
+   const savedGRN = response.data?.data || response.data;
+
+    /** Handle PO sync if purchaseOrderId is valid */
+    if (savedGRN?.purchaseOrderId) {
+      try {
+        const { data: poRes } = await axios.get(
+          `/api/purchase-order/${savedGRN.purchaseOrderId}`,
         );
-        return;
-      }
-      // For items managed by batch, ensure total batch quantity equals item quantity.
-      if (item.managedBy && item.managedBy.toLowerCase() === "batch") {
-        const totalBatchQty = (item.batches || []).reduce(
-          (sum, batch) => sum + (Number(batch.batchQuantity) || 0),
-          0
+        const po = poRes.data;
+
+        const grnMap = new Map();
+        savedGRN.items.forEach(({ itemCode, receivedQuantity, quantity }) => {
+          grnMap.set(itemCode, receivedQuantity || quantity || 0);
+        });
+
+        let prevGrnMap = new Map();
+        if (isEdit) {
+          const { data: oldGrnRes } = await axios.get(`/api/grn/${editId}`);
+          oldGrnRes.data.items.forEach(({ itemCode, receivedQuantity, quantity }) => {
+            prevGrnMap.set(itemCode, receivedQuantity || quantity || 0);
+          });
+        }
+
+        const updatedItems = po.items.map(poItem => {
+          const newQty = grnMap.get(poItem.itemCode) || 0;
+          const prevQty = prevGrnMap.get(poItem.itemCode) || 0;
+          const diff = newQty - prevQty;
+
+          return {
+            ...poItem,
+            receivedQuantity: (poItem.receivedQuantity || 0) + diff,
+          };
+        });
+
+        const statusAllReceived = updatedItems.every(
+          ({ receivedQuantity, orderedQuantity }) =>
+            receivedQuantity >= orderedQuantity,
         );
-        if (totalBatchQty !== Number(item.quantity)) {
-          toast.error(
-            `Batch quantity mismatch for item ${item.itemCode}: total batch quantity (${totalBatchQty}) does not equal item quantity (${item.quantity}).`
-          );
-          return;
-        }
-      }
-    }
-  
-    try {
-      // Merge summary values into the payload.
-      const payload = {
-        ...grnData,
-        totalBeforeDiscount: summary.totalBeforeDiscount,
-        gstTotal: summary.gstTotal,
-        grandTotal: summary.grandTotal,
-      };
-  
-      // Clean the payload by removing any _id fields if needed.
-      if ("_id" in payload) delete payload._id;
-      payload.items = payload.items.map((item) => {
-        if ("_id" in item) delete item._id;
-        return item;
-      });
-  
-      let response;
-      if (isEdit) {
-        response = await axios.put(`/api/grn/${editId}`, payload, {
-          headers: { "Content-Type": "application/json" },
+        const statusAnyReceived = updatedItems.some(
+          ({ receivedQuantity }) => receivedQuantity > 0,
+        );
+
+        const newStatus = statusAllReceived
+          ? "Completed"
+          : statusAnyReceived
+          ? "PartiallyReceived"
+          : "Open";
+
+        await axios.put(`/api/purchase-order/${savedGRN.purchaseOrderId}`, {
+          items: updatedItems,
+          orderStatus: newStatus,
         });
-        toast.success(`GRN updated successfully. GRN ID: ${response.data.grnId}`);
-      } else {
-        response = await axios.post("/api/grn", payload, {
-          headers: { "Content-Type": "application/json" },
-        });
-        toast.success(`GRN saved successfully. GRN ID: ${response.data.grnId}`);
-      }
-      setGrnData(initialGRNState);
-      router.push("/admin/grn-view");
-    } catch (error) {
-      console.error("Error saving GRN:", error);
-      toast.error(error.response?.data?.message || "Error saving GRN");
-    }
-  }, [grnData, summary, isEdit, editId, router]);
-
-  const handleCancel = useCallback(() => {
-    setGrnData(initialGRNState);
-    toast.info("GRN form cleared.");
-  }, []);
-
-  const handleCopyToPO = useCallback(() => {
-    sessionStorage.setItem("grnData", JSON.stringify(grnData));
-    router.push("/admin/purchase-order");
-  }, [grnData, router]);
-
-  // PO COPY: Load PO data from sessionStorage if available.
-  useEffect(() => {
-    async function loadSessionData() {
-      if (typeof window !== "undefined") {
-        const poData = sessionStorage.getItem("purchaseOrderData");
-        if (poData) {
-          try {
-            const parsedData = JSON.parse(poData);
-            // For each item, if managedBy is missing, fetch from item master.
-            for (let i = 0; i < parsedData.items.length; i++) {
-              let item = parsedData.items[i];
-              if (!item.managedBy || item.managedBy.trim() === "") {
-                const res = await axios.get(`/api/items/${item.item}`);
-                if (res.data.success) {
-                  const masterData = res.data.data;
-                  item.managedBy = masterData.managedBy;
-                  console.log(`Fetched managedBy for PO item ${item.itemCode}:`, masterData.managedBy);
-                } else {
-                  console.error("Item master not found for item:", item.item);
-                }
-              }
-            }
-            // Update items accordingly.
-            parsedData.items = parsedData.items.map((item) => {
-              if (item._id) delete item._id;
-              return {
-                ...item,
-                allowedQuantity: item.allowedQuantity || item.quantity,
-                managedBy: item.managedBy,
-                batches:
-                  item.managedBy && item.managedBy.toLowerCase() === "batch"
-                    ? item.batches && item.batches.length > 0
-                      ? item.batches
-                      : [
-                          {
-                            batchNumber: "",
-                            expiryDate: "",
-                            manufacturer: "",
-                            batchQuantity: 0,
-                          },
-                        ]
-                    : [],
-                gstRate: item.gstRate || 0,
-                taxOption: item.taxOption || "GST",
-                igstRate:
-                  item.taxOption === "IGST" && (!item.igstRate || parseFloat(item.igstRate) === 0)
-                    ? item.gstRate
-                    : item.igstRate || 0,
-                cgstRate: item.taxOption === "GST" && !item.cgstRate ? item.gstRate / 2 : item.cgstRate || 0,
-                sgstRate: item.taxOption === "GST" && !item.sgstRate ? item.gstRate / 2 : item.sgstRate || 0,
-                qualityCheckDetails:
-                  item.qualityCheckDetails && item.qualityCheckDetails.length > 0
-                    ? item.qualityCheckDetails
-                    : [
-                        { parameter: "Weight", min: "", max: "", actualValue: "" },
-                        { parameter: "Dimension", min: "", max: "", actualValue: "" },
-                      ],
-              };
-            });
-            if (parsedData._id) {
-              parsedData.purchaseOrderId = parsedData._id;
-              delete parsedData._id;
-            }
-            setGrnData(parsedData);
-            sessionStorage.removeItem("purchaseOrderData");
-            setIsCopied(true);
-            toast.info("PO data loaded into GRN form.");
-          } catch (error) {
-            console.error("Error parsing PO data:", error);
-          }
-        }
+      } catch (err) {
+        console.error("Failed to update PO:", err);
+        toast.error("GRN saved, but updating the linked Purchase Order failed");
       }
     }
-    loadSessionData();
-  }, []);
+
+    toast.success(isEdit ? "GRN updated" : "GRN saved");
+    router.push("/admin/grn-view");
+  } catch (err) {
+    toast.error(err.response?.data?.error || err.message);
+  }
+}, [grnData, summary, isEdit, editId, router]);
+
+
+
+ 
 
   return (
     <div ref={parentRef} className="m-11 p-5 shadow-xl">
       <h1 className="text-2xl font-bold mb-4">{isEdit ? "Edit GRN" : "GRN Form"}</h1>
-      {/* Barcode Scan Section */}
-      <div className="mb-6 p-4 border rounded-lg shadow-lg">
-        <h2 className="text-lg font-semibold mb-2">Barcode Scan</h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Enter Barcode"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            className="flex-1 p-2 border rounded"
-          />
-          <button
-            type="button"
-            onClick={handleBarcodeScan}
-            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            Scan Barcode
-          </button>
-        </div>
-      </div>
-      {/* Supplier & Document Details */}
+
+      {/* Supplier & Doc Details */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+        {/* Left column */}
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
+          <div>
+            <label className="block mb-2 font-medium">Supplier Code</label>
+            <input
+              readOnly
+              value={grnData.supplierCode}
+              className="w-full p-2 border rounded bg-gray-100"
+            />
+          </div>
           <div>
             <label className="block mb-2 font-medium">Supplier Name</label>
             {grnData.supplierName ? (
               <input
-                type="text"
-                name="supplierName"
-                value={grnData.supplierName}
                 readOnly
+                value={grnData.supplierName}
                 className="w-full p-2 border rounded bg-gray-100"
               />
             ) : (
@@ -638,29 +563,16 @@ function GRNFormWrapper() {
             )}
           </div>
           <div>
-            <label className="block mb-2 font-medium">Supplier Code</label>
-            <input
-              type="text"
-              name="supplierCode"
-              value={grnData.supplierCode}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-100"
-            />
-          </div>
-          <div>
             <label className="block mb-2 font-medium">Contact Person</label>
             <input
-              type="text"
-              name="contactPerson"
-              value={grnData.contactPerson}
               readOnly
+              value={grnData.contactPerson}
               className="w-full p-2 border rounded bg-gray-100"
             />
           </div>
           <div>
             <label className="block mb-2 font-medium">Reference Number</label>
             <input
-              type="text"
               name="refNumber"
               value={grnData.refNumber}
               onChange={handleInputChange}
@@ -668,7 +580,9 @@ function GRNFormWrapper() {
             />
           </div>
         </div>
-        <div className="w-full md:w-1/2 space-y-4">
+
+        {/* Right column */}
+        <div className="basis-full md:basis-1/2 px-2 space-y-4">
           <div>
             <label className="block mb-2 font-medium">Status</label>
             <select
@@ -677,7 +591,6 @@ function GRNFormWrapper() {
               onChange={handleInputChange}
               className="w-full p-2 border rounded"
             >
-              <option value="">Select status</option>
               <option value="Received">Received</option>
               <option value="Partial">Partial</option>
             </select>
@@ -714,7 +627,8 @@ function GRNFormWrapper() {
           </div>
         </div>
       </div>
-      {/* Items Section */}
+
+      {/* Items */}
       <h2 className="text-xl font-semibold mt-6">Items</h2>
       <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
         <ItemSection
@@ -722,28 +636,22 @@ function GRNFormWrapper() {
           onItemChange={handleItemChange}
           onAddItem={addItemRow}
           onItemSelect={handleItemSelect}
+          onRemoveItem={removeItemRow}
         />
       </div>
-      {/* Batch Modal Trigger – only for items with managedBy equal to "batch" */}
-      <div className="mb-8">
+
+
+           <div className="mb-8">
         {grnData.items.map((item, index) =>
           item.item &&
           item.managedBy &&
           item.managedBy.trim().toLowerCase() === "batch" ? (
             <div key={index} className="flex items-center justify-between border p-3 rounded mb-2">
               <div>
-                <strong>
-                  {item.itemCode} - {item.itemName}
-                </strong>
-                <span className="ml-2 text-sm text-gray-600">
-                  (Unit Price: {item.unitPrice})
-                </span>
+                <strong>{item.itemCode} - {item.itemName}</strong>
+                <span className="ml-2 text-sm text-gray-600">(Unit Price: {item.unitPrice})</span>
               </div>
-              <button
-                type="button"
-                onClick={() => openBatchModal(index)}
-                className="px-3 py-1 bg-green-500 text-white rounded"
-              >
+              <button type="button" onClick={() => openBatchModal(index)} className="px-3 py-1 bg-green-500 text-white rounded">
                 Set Batch Details
               </button>
             </div>
@@ -755,9 +663,7 @@ function GRNFormWrapper() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg max-w-lg w-full">
             <h2 className="text-xl font-semibold mb-2">
-              Batch Details for{" "}
-              {grnData.items[selectedBatchItemIndex].itemCode} -{" "}
-              {grnData.items[selectedBatchItemIndex].itemName}
+              Batch Details for {grnData.items[selectedBatchItemIndex].itemCode} - {grnData.items[selectedBatchItemIndex].itemName}
             </h2>
             <p className="mb-4 text-sm text-gray-600">
               Unit Price: {grnData.items[selectedBatchItemIndex].unitPrice}
@@ -779,14 +685,7 @@ function GRNFormWrapper() {
                         <input
                           type="text"
                           value={batch.batchNumber || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(
-                              selectedBatchItemIndex,
-                              batchIdx,
-                              "batchNumber",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "batchNumber", e.target.value)}
                           className="w-full p-1 border rounded"
                         />
                       </td>
@@ -794,14 +693,7 @@ function GRNFormWrapper() {
                         <input
                           type="date"
                           value={batch.expiryDate || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(
-                              selectedBatchItemIndex,
-                              batchIdx,
-                              "expiryDate",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "expiryDate", e.target.value)}
                           className="w-full p-1 border rounded"
                         />
                       </td>
@@ -809,14 +701,7 @@ function GRNFormWrapper() {
                         <input
                           type="text"
                           value={batch.manufacturer || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(
-                              selectedBatchItemIndex,
-                              batchIdx,
-                              "manufacturer",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "manufacturer", e.target.value)}
                           className="w-full p-1 border rounded"
                         />
                       </td>
@@ -824,14 +709,7 @@ function GRNFormWrapper() {
                         <input
                           type="number"
                           value={batch.batchQuantity || 0}
-                          onChange={(e) =>
-                            handleBatchEntryChange(
-                              selectedBatchItemIndex,
-                              batchIdx,
-                              "batchQuantity",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "batchQuantity", e.target.value)}
                           className="w-full p-1 border rounded"
                         />
                       </td>
@@ -842,35 +720,78 @@ function GRNFormWrapper() {
             ) : (
               <p className="mb-4">No batch entries yet.</p>
             )}
-            <button
-              type="button"
-              onClick={addBatchEntry}
-              className="px-4 py-2 bg-green-500 text-white rounded mb-4"
-            >
+            <button type="button" onClick={addBatchEntry} className="px-4 py-2 bg-green-500 text-white rounded mb-4">
               Add Batch Entry
             </button>
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeBatchModal}
-                className="px-4 py-2 bg-blue-500 text-white rounded"
-              >
+              <button type="button" onClick={closeBatchModal} className="px-4 py-2 bg-blue-500 text-white rounded">
                 Save &amp; Close
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Freight & Rounding */}
+      <div className="grid md:grid-cols-2 gap-6 mt-6 mb-6">
+        <div>
+          <label className="block mb-1 font-medium">Freight</label>
+          <input
+            name="freight"
+            type="number"
+            value={grnData.freight}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Rounding</label>
+          <input
+            name="rounding"
+            type="number"
+            value={grnData.rounding}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div>
+          <label className="block mb-1 font-medium">Total Before Discount</label>
+          <input
+            readOnly
+            value={summary.totalBeforeDiscount}
+            className="w-full p-2 border bg-gray-100 rounded"
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">GST Total</label>
+          <input
+            readOnly
+            value={summary.gstTotal}
+            className="w-full p-2 border bg-gray-100 rounded"
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Grand Total</label>
+          <input
+            readOnly
+            value={summary.grandTotal}
+            className="w-full p-2 border bg-gray-100 rounded"
+          />
+        </div>
+      </div>
+
       {/* Sales Employee & Remarks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
         <div>
           <label className="block mb-2 font-medium">Sales Employee</label>
           <input
-            type="text"
             name="salesEmployee"
             value={grnData.salesEmployee}
             onChange={handleInputChange}
-            placeholder="Enter sales employee name"
             className="w-full p-2 border rounded"
           />
         </div>
@@ -881,53 +802,11 @@ function GRNFormWrapper() {
             value={grnData.remarks}
             onChange={handleInputChange}
             className="w-full p-2 border rounded"
-          ></textarea>
-        </div>
-      </div>
-      {/* Summary Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-        <div>
-          <label className="block mb-2 font-medium">Taxable Amount</label>
-          <input
-            type="number"
-            name="totalBeforeDiscount"
-            value={summary.totalBeforeDiscount}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-medium">Rounding</label>
-          <input
-            type="number"
-            name="rounding"
-            value={grnData.rounding}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-medium">GST Total</label>
-          <input
-            type="number"
-            name="gstTotal"
-            value={summary.gstTotal}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-medium">Grand Total</label>
-          <input
-            type="number"
-            name="grandTotal"
-            value={summary.grandTotal}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
           />
         </div>
       </div>
-      {/* Action Buttons */}
+
+      {/* Actions */}
       <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
         <button
           onClick={handleSaveGRN}
@@ -936,383 +815,24 @@ function GRNFormWrapper() {
           {isEdit ? "Update GRN" : "Save GRN"}
         </button>
         <button
-          onClick={handleCancel}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
+          onClick={() => setGrnData(initialGRNState) || toast.info("GRN cleared")}
+          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-300"
         >
           Cancel
         </button>
-        <button
+        {/* <button
           onClick={handleCopyToPO}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Copy To PO
-        </button>
+        </button> */}
       </div>
+
       <ToastContainer />
     </div>
   );
 }
 
 
-export default GRNFormWrapper;
 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-// "use client";
-
-// import { useState, useEffect, useCallback } from "react";
-// import { useRouter, useSearchParams } from "next/navigation";
-// import axios from "axios";
-// import ItemSection from "@/components/ItemSection";
-// import SupplierSearch from "@/components/SupplierSearch";
-// import Link from "next/link";
-// import { FaEdit } from "react-icons/fa";
-
-// const initialState = {
-//   supplierCode: "",
-//   supplierName: "",
-//   contactPerson: "",
-//   refNumber: "",
-//   status: "Open",
-//   postingDate: "",
-//   validUntil: "",
-//   documentDate: "",
-//   items: [
-//     {
-//       itemCode: "",
-//       itemName: "",
-//       itemDescription: "",
-//       quantity: 0,
-//       unitPrice: 0,
-//       discount: 0,
-//       freight: 0,
-//       gstType: 0,
-//       priceAfterDiscount: 0,
-//       totalAmount: 0,
-//       gstAmount: 0,
-//       tdsAmount: 0,
-//     },
-//   ],
-//   salesEmployee: "",
-//   remarks: "",
-//   freight: 0,
-//   rounding: 0,
-//   totalBeforeDiscount: 0,
-//   totalDownPayment: 0,
-//   appliedAmounts: 0,
-//   gstTotal: 0,
-//   grandTotal: 0,
-//   openBalance: 0,
-// };
-
-// function formatDateForInput(date) {
-//   if (!date) return "";
-//   const d = new Date(date);
-//   const year = d.getFullYear();
-//   const month = ("0" + (d.getMonth() + 1)).slice(-2);
-//   const day = ("0" + d.getDate()).slice(-2);
-//   return `${year}-${month}-${day}`;
-// }
-
-// export default function GrnForm() {
-//   const router = useRouter();
-//   const searchParams = useSearchParams();
-//   const editId = searchParams.get("editId");
-
-//   const [formData, setFormData] = useState(initialState);
-
-//   useEffect(() => {
-//     if (editId) {
-//       axios
-//         .get(`/api/grn/${editId}`)
-//         .then((res) => {
-//           if (res.data.success) {
-//             const record = res.data.data;
-//             setFormData({
-//               ...record,
-//               postingDate: formatDateForInput(record.postingDate),
-//               validUntil: formatDateForInput(record.validUntil),
-//               documentDate: formatDateForInput(record.documentDate),
-//             });
-//             console.log(record)
-//           }
-//         })
-//         .catch((err) => {
-//           console.error("Error fetching GRN data for editing:", err);
-//         });
-//     }
-//   }, [editId]);
-
-  
-
-//   const handleSupplierSelect = useCallback((selectedSupplier) => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       supplierCode: selectedSupplier.supplierCode || "",
-//       supplierName: selectedSupplier.supplierName || "",
-//       contactPerson: selectedSupplier.contactPersonName || "",
-//     }));
-//   }, []);
-
-//   const handleInputChange = useCallback((e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   }, []);
-
-//   const handleItemChange = (index, field, value) => {
-//     const updatedItems = [...formData.items];
-//     updatedItems[index][field] = value;
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-//   const addItemRow = useCallback(() => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       items: [
-//         ...prev.items,
-//         {
-//           itemCode: "",
-//           itemName: "",
-//           itemDescription: "",
-//           quantity: 0,
-//           unitPrice: 0,
-//           discount: 0,
-//           freight: 0,
-//           gstType: 0,
-//           priceAfterDiscount: 0,
-//           totalAmount: 0,
-//           gstAmount: 0,
-//           tdsAmount: 0,
-//         },
-//       ],
-//     }));
-//   }, []);
-
-//   const handleRemoveItem = (index) => {
-//     const updatedItems = formData.items.filter((_, i) => i !== index);
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-
-//   const handleSubmit = async () => {
-//     if (editId) {
-//       try {
-//         await axios.put(`/api/grn/${editId}`, formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("Purchase GRN updated successfully");
-//         router.push("/admin/grn-view");
-//       } catch (error) {
-//         console.error("Error updating GRN:", error);
-//         alert("Failed to update GRN");
-//       }
-//     } else {
-//       try {
-//         await axios.post("/api/grn", formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("Purchase GRN added successfully");
-//         setFormData(initialState);
-//         router.push("/admin/grn-view");
-//       } catch (error) {
-//         console.error("Error adding GRN:", error);
-//         alert("Error adding GRN");
-//       }
-//     }
-//   };
-//   return (
-//     <div className="m-11 p-5 shadow-xl">
-//       <h1 className="text-2xl font-bold mb-4">
-//         {editId ? "Edit GRN" : "Create GRN"}
-//       </h1>
-//       {/* Supplier Section */}
-//       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-//         <div className="grid grid-cols-2 gap-7">
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Name</label>
-//             {formData.supplierName ? (
-//               <input
-//                 type="text"
-//                 name="supplierName"
-//                 value={formData.supplierName}
-//                 readOnly
-//                 className="w-full p-2 border rounded bg-gray-100"
-//               />
-//             ) : (
-//               <SupplierSearch onSelectSupplier={handleSupplierSelect} />
-//             )}
-            
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Code</label>
-//             <input
-//               type="text"
-//               name="supplierCode"
-//               value={formData.supplierCode || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Contact Person</label>
-//             <input
-//               type="text"
-//               name="contactPerson"
-//               value={formData.contactPerson || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Reference Number</label>
-//             <input
-//               type="text"
-//               name="refNumber"
-//               value={formData.refNumber || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//         {/* Additional Order Info */}
-//         <div className="w-full md:w-1/2 space-y-4">
-//           <div>
-//             <label className="block mb-2 font-medium">Status</label>
-//             <select
-//               name="status"
-//               value={formData.status || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             >
-//               <option value="">Select status (optional)</option>
-//               <option value="Open">Open</option>
-//               <option value="Closed">Closed</option>
-//               <option value="Pending">Pending</option>
-//               <option value="Cancelled">Cancelled</option>
-//             </select>
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Posting Date</label>
-//             <input
-//               type="date"
-//               name="postingDate"
-//               value={formData.postingDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Valid Until</label>
-//             <input
-//               type="date"
-//               name="validUntil"
-//               value={formData.validUntil || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Delivery Date</label>
-//             <input
-//               type="date"
-//               name="documentDate"
-//               value={formData.documentDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//       </div>
-//       {/* Items Section */}
-//       <h2 className="text-xl font-semibold mt-6">Items</h2>
-//       <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
-//         <ItemSection
-//           items={formData.items}
-//           onItemChange={handleItemChange}
-//           onAddItem={addItemRow}
-//         />
-//       </div>
-//       {/* Other Form Fields & Summary */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Sales Employee</label>
-//           <input
-//             type="text"
-//             name="salesEmployee"
-//             value={formData.salesEmployee || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Remarks</label>
-//           <textarea
-//             name="remarks"
-//             value={formData.remarks || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           ></textarea>
-//         </div>
-//       </div>
-//       {/* Summary Section */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Taxable Amount</label>
-//           <input
-//             type="number"
-//             name="taxableAmount"
-//             value={formData.items.reduce((acc, item) => acc + (parseFloat(item.totalAmount) || 0), 0)}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Rounding</label>
-//           <input
-//             type="number"
-//             name="rounding"
-//             value={formData.rounding || 0}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">GST</label>
-//           <input
-//             type="number"
-//             name="gstTotal"
-//             value={formData.gstTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Total Amount</label>
-//           <input
-//             type="number"
-//             name="grandTotal"
-//             value={formData.grandTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//       </div>
-
-//       {/* Action Buttons */}
-//       <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <button
-//           onClick={handleSubmit}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           {editId ? "Update" : "Add"}
-//         </button>
-//         <button
-//           onClick={() => router.push("/admin/grn-view")}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           Cancel
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
+export default GRNFormWrapper

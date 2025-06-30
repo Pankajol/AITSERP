@@ -1,1448 +1,890 @@
-// "use client";
-// import { useState, useEffect, useCallback } from "react";
-// import { useRouter, useSearchParams, useParams } from "next/navigation";
-// import axios from "axios";
-// import ItemSection from "@/components/ItemSection";
-// import SupplierSearch from "@/components/SupplierSearch";
-// import Link from "next/link";
-// import { FaEdit } from "react-icons/fa";
-
-// const initialState = {
-//   supplierCode: "",
-//   supplierName: "",
-//   contactPerson: "",
-//   refNumber: "",
-//   status: "Open",
-//   postingDate: "",
-//   validUntil: "",
-//   documentDate: "",
-//   items: [
-//     {
-//       itemCode: "",
-//       itemName: "",
-//       itemDescription: "",
-//       quantity: 0,
-//       unitPrice: 0,
-//       discount: 0,
-//       freight: 0,
-//       gstType: 0,
-//       priceAfterDiscount: 0,
-//       totalAmount: 0,
-//       gstAmount: 0,
-//       tdsAmount: 0,
-//     },
-//   ],
-//   salesEmployee: "",
-//   remarks: "",
-//   freight: 0,
-//   rounding: 0,
-//   totalBeforeDiscount: 0,
-//   totalDownPayment: 0,
-//   appliedAmounts: 0,
-//   gstTotal: 0,
-//   grandTotal: 0,
-//   openBalance: 0,
-// };
-
-// function formatDateForInput(date) {
-//   if (!date) return "";
-//   const d = new Date(date);
-//   const year = d.getFullYear();
-//   const month = ("0" + (d.getMonth() + 1)).slice(-2);
-//   const day = ("0" + d.getDate()).slice(-2);
-//   return `${year}-${month}-${day}`;
-// }
-
-// // Helper function to merge the loaded record with the defaults from initialState
-// function mergeFormData(record) {
-//   return {
-//     supplierCode: record.supplierCode || initialState.supplierCode,
-//     supplierName: record.supplierName || initialState.supplierName,
-//     contactPerson: record.contactPerson || initialState.contactPerson,
-//     refNumber: record.refNumber || initialState.refNumber,
-//     status: record.status || initialState.status,
-//     postingDate: formatDateForInput(record.postingDate),
-//     validUntil: formatDateForInput(record.validUntil),
-//     documentDate: formatDateForInput(record.documentDate),
-//     items: record.items && Array.isArray(record.items)
-//       ? record.items.map(item => ({
-//           itemCode: item.itemCode || "",
-//           itemName: item.itemName || "",
-//           itemDescription: item.itemDescription || "",
-//           quantity: item.quantity || 0,
-//           unitPrice: item.unitPrice || 0,
-//           discount: item.discount || 0,
-//           freight: item.freight || 0,
-//           gstType: item.gstType || 0,
-//           priceAfterDiscount: item.priceAfterDiscount || 0,
-//           totalAmount: item.totalAmount || 0,
-//           gstAmount: item.gstAmount || 0,
-//           tdsAmount: item.tdsAmount || 0,
-//         }))
-//       : initialState.items,
-//     salesEmployee: record.salesEmployee || initialState.salesEmployee,
-//     remarks: record.remarks || initialState.remarks,
-//     freight: record.freight || initialState.freight,
-//     rounding: record.rounding || initialState.rounding,
-//     totalBeforeDiscount: record.totalBeforeDiscount || initialState.totalBeforeDiscount,
-//     totalDownPayment: record.totalDownPayment || initialState.totalDownPayment,
-//     appliedAmounts: record.appliedAmounts || initialState.appliedAmounts,
-//     gstTotal: record.gstTotal || initialState.gstTotal,
-//     grandTotal: record.grandTotal || initialState.grandTotal,
-//     openBalance: record.openBalance || initialState.openBalance,
-//   };
-// }
-
-// export default function GrnForm() {
-//   const router = useRouter();
-//   const params = useParams();
-//   const searchParams = useSearchParams();
-//   const editId = searchParams.get("editId");
-
-//   const [formData, setFormData] = useState(initialState);
-
-//   // Load record for editing and merge with defaults so all fields are present
-//   useEffect(() => {
-//     if (editId) {
-//       axios
-//         .get(`/api/purchaseInvoice/${editId}`)
-//         .then((res) => {
-//           if (res.data.success) {
-//             const record = res.data.data;
-//             const mergedData = mergeFormData(record);
-//             setFormData(mergedData);
-//             console.log("Loaded record:", mergedData);
-//           }
-//         })
-//         .catch((err) => {
-//           console.error("Error fetching GRN data for editing:", err);
-//         });
-//     }
-//   }, [editId]);
-
-//   const handleSupplierSelect = useCallback((selectedSupplier) => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       supplierCode: selectedSupplier.supplierCode || "",
-//       supplierName: selectedSupplier.supplierName || "",
-//       contactPerson: selectedSupplier.contactPersonName || "",
-//     }));
-//   }, []);
-
-//   const handleInputChange = useCallback((e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   }, []);
-
-//   const handleItemChange = (index, field, value) => {
-//     const updatedItems = [...formData.items];
-//     updatedItems[index][field] = value;
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-
-//   const addItemRow = useCallback(() => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       items: [
-//         ...prev.items,
-//         {
-//           itemCode: "",
-//           itemName: "",
-//           itemDescription: "",
-//           quantity: 0,
-//           unitPrice: 0,
-//           discount: 0,
-//           freight: 0,
-//           gstType: 0,
-//           priceAfterDiscount: 0,
-//           totalAmount: 0,
-//           gstAmount: 0,
-//           tdsAmount: 0,
-//         },
-//       ],
-//     }));
-//   }, []);
-
-//   const handleRemoveItem = (index) => {
-//     const updatedItems = formData.items.filter((_, i) => i !== index);
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-
-//   const handleSubmit = async () => {
-//     if (editId) {
-//       try {
-//         await axios.put(`/api/purchaseInvoice/${editId}`, formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("Invoice updated successfully");
-//         router.push("/admin/purchaseInvoice-view");
-//       } catch (error) {
-//         console.error("Error updating GRN:", error);
-//         alert("Failed to update GRN");
-//       }
-//     } else {
-//       try {
-//         await axios.post("/api/purchaseInvoice", formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("Purchase Invoice added successfully");
-//         setFormData(initialState);
-//         router.push("/admin/purchaseInvoice-view");
-//       } catch (error) {
-//         console.error("Error adding Purchase Invoice:", error);
-//         alert("Error adding Purchase Invoice");
-//       }
-//     }
-//   };
-
-//   return (
-//     <div className="m-11 p-5 shadow-xl">
-//       <h1 className="text-2xl font-bold mb-4">
-//         {editId ? "Edit Invoice" : "Create Invoice"}
-//       </h1>
-//       {/* Supplier Section */}
-//       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-//         <div className="grid grid-cols-2 gap-7">
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Name</label>
-//             <SupplierSearch onSelectSupplier={handleSupplierSelect} />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Code</label>
-//             <input
-//               type="text"
-//               name="supplierCode"
-//               value={formData.supplierCode || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Contact Person</label>
-//             <input
-//               type="text"
-//               name="contactPerson"
-//               value={formData.contactPerson || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Reference Number</label>
-//             <input
-//               type="text"
-//               name="refNumber"
-//               value={formData.refNumber || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//         {/* Additional Order Info */}
-//         <div className="w-full md:w-1/2 space-y-4">
-//           <div>
-//             <label className="block mb-2 font-medium">Status</label>
-//             <select
-//               name="status"
-//               value={formData.status || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             >
-//               <option value="">Select status (optional)</option>
-//               <option value="Open">Open</option>
-//               <option value="Closed">Closed</option>
-//               <option value="Pending">Pending</option>
-//               <option value="Cancelled">Cancelled</option>
-//             </select>
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Posting Date</label>
-//             <input
-//               type="date"
-//               name="postingDate"
-//               value={formData.postingDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Valid Until</label>
-//             <input
-//               type="date"
-//               name="validUntil"
-//               value={formData.validUntil || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Delivery Date</label>
-//             <input
-//               type="date"
-//               name="documentDate"
-//               value={formData.documentDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//       </div>
-//       {/* Items Section */}
-//       <h2 className="text-xl font-semibold mt-6">Items</h2>
-//       <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
-//         <ItemSection
-//           items={formData.items}
-//           onItemChange={handleItemChange}
-//           onAddItem={addItemRow}
-//           onRemoveItem={handleRemoveItem}
-//         />
-//       </div>
-//       {/* Other Form Fields & Summary */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Sales Employee</label>
-//           <input
-//             type="text"
-//             name="salesEmployee"
-//             value={formData.salesEmployee || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Remarks</label>
-//           <textarea
-//             name="remarks"
-//             value={formData.remarks || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           ></textarea>
-//         </div>
-//       </div>
-//       {/* Summary Section */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Taxable Amount</label>
-//           <input
-//             type="number"
-//             name="taxableAmount"
-//             value={formData.items.reduce((acc, item) => acc + (parseFloat(item.totalAmount) || 0), 0)}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Rounding</label>
-//           <input
-//             type="number"
-//             name="rounding"
-//             value={formData.rounding || 0}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">GST</label>
-//           <input
-//             type="number"
-//             name="gstTotal"
-//             value={formData.gstTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Total Amount</label>
-//           <input
-//             type="number"
-//             name="grandTotal"
-//             value={formData.grandTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//       </div>
-//       {/* Action Buttons */}
-//       <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <button
-//           onClick={handleSubmit}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           {editId ? "Update" : "Add"}
-//         </button>
-//         <button
-//           onClick={() => router.push("/admin/grn-view")}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           Cancel
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-//////////////////////////////////////////////////////////////////////
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Suspense } from "react";
-import { useRouter, useSearchParams, useParams } from "next/navigation";
-import axios from "axios";
-import SupplierSearch from "@/components/SupplierSearch";
-import ItemSection from "@/components/ItemSection";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-const initialState = {
-  supplierCode: "",
-  supplierName: "",
-  contactPerson: "",
-  invoiceNumber: "",
-  refNumber: "",
-  status: "Open",
-  postingDate: "",
-  validUntil: "",
-  documentDate: "",
-  items: [
-    {
-      itemCode: "",
-      itemName: "",
-      itemDescription: "",
-      quantity: 0,
-      unitPrice: 0,
-      discount: 0,
-      freight: 0,
-      gstType: 0,
-      priceAfterDiscount: 0,
-      totalAmount: 0,
-      gstAmount: 0,
-      tdsAmount: 0,
-      managedBy: "",
-      batches: [],
-    },
-  ],
-  salesEmployee: "",
-  remarks: "",
-  freight: 0,
-  rounding: 0,
-  totalBeforeDiscount: 0,
-  gstTotal: 0,
-  grandTotal: 0,
-  openBalance: 0,
+// ===============================
+// PurchaseInvoiceForm Component
+// ===============================
+// This component is used for creating / editing purchase invoices. It can also
+// **copy** data from a Purchase Order (PO) or a Goods Receipt Note (GRN) and
+// convert that data into an invoice.  The file is intentionally verbose with
+// inline comments to make complex logic easier to follow.
+// -----------------------------------------------------------------------------
+// Key sections ↓
+//  1.  Imports & helpers
+//  2.  React state & data‑loading side‑effects
+//  3.  Item‑list handlers  (add / remove / select / barcode scan)
+//  4.  Batch‑modal handlers (for batch‑managed items)
+//  5.  Summary calculation effect
+//  6.  Copy‑from‑PO / Copy‑from‑GRN effects
+//  7.  Save / Cancel / Copy‑to‑PO actions
+//  8.  JSX (form layout)
+// -----------------------------------------------------------------------------
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import axios from "axios";
+import { useRouter, useParams } from "next/navigation";
+import { ToastContainer, toast } from "react-toastify";
+// ⬇️ Local reusable components
+import SupplierSearch from "@/components/SupplierSearch";
+import ItemSection    from "@/components/ItemSection";
+
+// -----------------------------------------------------------------------------
+// 1️⃣  Initial shape of the form’s state (aka “GRN / Invoice draft”)
+// -----------------------------------------------------------------------------
+const initialGRNState = {
+  supplier: "",         // Mongo ID reference to supplier master (if needed)
+  supplierName: "",      // Supplier display name (redundant but convenient)
+  supplierCode: "",      // ERP / legacy code
+  contactPerson: "",     // Default contact at the supplier
+  refNumber: "",         // User‑entered reference / vendor invoice no.
+  status: "",            // e.g. "Pending" | "Paid"
+  postingDate: "",        // Accounting posting date
+  validUntil: "",         // For draft invoices – rarely used but optional
+  documentDate: "",       // Printed document date
+  salesEmployee: "",      // Name / ID of sales employee responsible
+  remarks: "",            // Free‑form memo
+  freight: 0,              // Extra freight charges (₹)
+  rounding: 0,             // Manual rounding adjustment (₹)
+  totalBeforeDiscount: 0,  // Computed → taxable amount before GST
+  gstTotal: 0,            // Computed → sum of CGST+SGST / IGST
+  grandTotal: 0,          // Computed → net payable (incl. GST + freight)
+  remainingAmount: 0,     // Outstanding amount (for partial payments)
+  invoiceType: "Normal",  // "Normal" | "POCopy" | "GRNCopy"
+  items: [],              // Invoice line items (see handleItemSelect)
+  qualityCheckDetails: [],// Optional QC details
 };
 
+// -----------------------------------------------------------------------------
+// 2️⃣  Small helper – format JS Date ↔️ <input type="date"> value.
+// -----------------------------------------------------------------------------
 function formatDateForInput(dateStr) {
   if (!dateStr) return "";
+  const ddMmYyyyRegex = /^(\d{2})-(\d{2})-(\d{4})$/; // e.g. "25-06-2025"
+  if (ddMmYyyyRegex.test(dateStr)) {
+    const [dd, mm, yyyy] = dateStr.split("-");
+    return `${yyyy}-${mm}-${dd}`; // HTML date expects yyyy-mm-dd
+  }
+  // Otherwise assume ISO / other parsable format
   const d = new Date(dateStr);
-  const year = d.getFullYear();
-  const month = ("0" + (d.getMonth() + 1)).slice(-2);
-  const day = ("0" + d.getDate()).slice(-2);
-  return `${year}-${month}-${day}`;
+  return !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
 }
 
-function mergeFormData(record) {
-  return {
-    supplierCode: record.supplierCode || "",
-    supplierName: record.supplierName || "",
-    contactPerson: record.contactPerson || "",
-    invoiceNumber: record.invoiceNumber || "",
-    refNumber: record.refNumber || "",
-    status: record.status || "Open",
-    postingDate: formatDateForInput(record.postingDate),
-    validUntil: formatDateForInput(record.validUntil),
-    documentDate: formatDateForInput(record.documentDate),
-    items: record.items && Array.isArray(record.items)
-      ? record.items.map(item => ({
-          itemCode: item.itemCode || "",
-          itemName: item.itemName || "",
-          itemDescription: item.itemDescription || "",
-          quantity: item.quantity || 0,
-          unitPrice: item.unitPrice || 0,
-          discount: item.discount || 0,
-          freight: item.freight || 0,
-          gstType: item.gstType || 0,
-          priceAfterDiscount: item.priceAfterDiscount || 0,
-          totalAmount: item.totalAmount || 0,
-          gstAmount: item.gstAmount || 0,
-          tdsAmount: item.tdsAmount || 0,
-          managedBy: item.managedBy || "",
-          batches: item.batches || [],
-        }))
-      : [],
-    salesEmployee: record.salesEmployee || "",
-    remarks: record.remarks || "",
-    freight: record.freight || 0,
-    rounding: record.rounding || 0,
-    totalBeforeDiscount: record.totalBeforeDiscount || 0,
-    gstTotal: record.gstTotal || 0,
-    grandTotal: record.grandTotal || 0,
-    openBalance: record.openBalance || 0,
-  };
-}
+// ===============================
+// Main Component
+// ===============================
+export default function PurchaseInvoiceForm() {
+  const router    = useRouter();       // for navigation after save / copy
+  const params    = useParams();       // invoiceId when editing existing
+  const parentRef = useRef(null);      // parent div → for printing if needed
 
-
-function PurchaseInvoiceFormWrapper() {
-  return (
-<Suspense fallback={<div className="text-center py-10">Loading form data...</div>}>
-      <PurchaseInvoiceEditPage />
-    </Suspense>
-  );
-}
-
-
-
- function PurchaseInvoiceEditPage() {
-  const router = useRouter();
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const editId = searchParams.get("editId");
-  const parentRef = useRef(null);
-
-  const [formData, setFormData] = useState(initialState);
-  const [barcode, setBarcode] = useState("");
+  // ---------------------------------------------------------------------------
+  // React State
+  // ---------------------------------------------------------------------------
+  const [grnData, setGrnData] = useState(initialGRNState); // main form data
+  const [summary, setSummary] = useState({                 // computed totals
+    totalBeforeDiscount: 0,
+    gstTotal: 0,
+    grandTotal: 0,
+  });
+  const [isCopied, setIsCopied] = useState(false);         // flag if data copied from PO/GRN
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [selectedBatchItemIndex, setSelectedBatchItemIndex] = useState(null);
+  const [barcode, setBarcode] = useState("");              // manual barcode input
 
-  // Load record for editing.
+  // ---------------------------------------------------------------------------
+  // 💾 Load existing invoice for EDIT mode (URL: /invoice/[id])
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (editId) {
-      axios
-        .get(`/api/purchaseInvoice/${editId}`)
-        .then((res) => {
-          if (res.data.success) {
-            const record = res.data.data;
-            const mergedData = mergeFormData(record);
-            setFormData(mergedData);
-            toast.info("Invoice data loaded for editing.");
-          } else {
-            toast.error("Invoice not found.");
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching invoice data for editing:", err);
-          toast.error("Error loading invoice data.");
-        });
-    }
-  }, [editId]);
+    if (!params?.id) return;
+    axios
+      .get(`/api/purchaseInvoice/${params.id}`)
+      .then(res => {
+        if (res.data.success) {
+          setGrnData(res.data.data);
+          toast.info("Invoice data loaded for editing.");
+        } else {
+          toast.error("Invoice not found.");
+        }
+      })
+      .catch(err => {
+        console.error("Error loading invoice for edit:", err);
+        toast.error("Error loading invoice data.");
+      });
+  }, [params]);
 
-  const handleSupplierSelect = useCallback((selectedSupplier) => {
-    setFormData((prev) => ({
+  // ---------------------------------------------------------------------------
+  // Generic <input> change handler (for text / select / number fields)
+  // ---------------------------------------------------------------------------
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setGrnData(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // SupplierSearch → onSelect callback
+  // Auto‑fills code, name & contact person.
+  // ---------------------------------------------------------------------------
+  const handleSupplierSelect = useCallback((supplier) => {
+    setGrnData(prev => ({
       ...prev,
-      supplierCode: selectedSupplier.supplierCode || "",
-      supplierName: selectedSupplier.supplierName || "",
-      contactPerson: selectedSupplier.contactPersonName || "",
+      supplierCode:   supplier.supplierCode       ?? "",
+      supplierName:   supplier.supplierName       ?? "",
+      contactPerson:  supplier.contactPersonName  ?? "",
     }));
   }, []);
 
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // ---------------------------------------------------------------------------
+  // Update QC actual values (simple nested state update)
+  // ---------------------------------------------------------------------------
+  const handleQualityCheckChange = useCallback((idx, value) => {
+    setGrnData(prev => {
+      const qc = [...prev.qualityCheckDetails];
+      qc[idx] = { ...qc[idx], actualValue: value };
+      return { ...prev, qualityCheckDetails: qc };
+    });
   }, []);
 
-  const handleItemChange = (index, field, value) => {
-    const updatedItems = [...formData.items];
-    updatedItems[index][field] = value;
-    setFormData((prev) => ({ ...prev, items: updatedItems }));
-  };
+  // ---------------------------------------------------------------------------
+  // ITEM selection handler – centralises: managedBy fetch, tax splits, etc.
+  // ---------------------------------------------------------------------------
+  const handleItemSelect = useCallback(async (index, selectedItem) => {
+    if (!selectedItem?._id) {
+      toast.error("Selected item does not have a valid ID.");
+      return;
+    }
 
+    // 1️⃣ Ensure we know how this item is managed (batch / serial / none)
+    let managedBy = selectedItem.managedBy;
+    if (!managedBy?.trim()) {
+      try {
+        const res = await axios.get(`/api/items/${selectedItem._id}`);
+        managedBy = res.data.success ? res.data.data.managedBy : "";
+      } catch (err) {
+        console.error("Error fetching item master details:", err);
+        managedBy = "";
+      }
+    }
+
+    // 2️⃣ Compute all derived monetary fields at selection time
+    const unitPrice   = +selectedItem.unitPrice  || 0;
+    const discount    = +selectedItem.discount   || 0;
+    const freight     = +selectedItem.freight    || 0;
+    const quantity    = 1;                       // default 1; user can change later
+    const taxOption   = selectedItem.taxOption   || "GST";  // GST vs IGST
+    const gstRate     = +selectedItem.gstRate    || 0;       // overall GST %
+    const priceAfterDiscount = unitPrice - discount;
+    const totalAmount        = quantity * priceAfterDiscount + freight;
+    const cgstRate = +selectedItem.cgstRate || gstRate / 2;
+    const sgstRate = +selectedItem.sgstRate || gstRate / 2;
+    const cgstAmount = totalAmount * cgstRate / 100;
+    const sgstAmount = totalAmount * sgstRate / 100;
+    const gstAmount  = cgstAmount + sgstAmount;
+    const igstAmount = taxOption === "IGST" ? totalAmount * gstRate / 100 : 0;
+
+    // 3️⃣ Prepare new/updated item object
+    const updatedItem = {
+      item:            selectedItem._id,
+      itemCode:        selectedItem.itemCode        ?? "",
+      itemName:        selectedItem.itemName,
+      itemDescription: selectedItem.description     ?? "",
+      unitPrice,
+      discount,
+      freight,
+      quantity,
+      gstRate,
+      taxOption,
+      priceAfterDiscount,
+      totalAmount,
+      gstAmount,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
+      managedBy,
+      // If item is batch‑managed create an empty batches array so modal can add rows
+      batches: managedBy?.trim().toLowerCase() === "batch" ? [] : [],
+    };
+
+    // 4️⃣ Add default QC rows if none came from master data
+    const qc = selectedItem.qualityCheckDetails?.length
+      ? selectedItem.qualityCheckDetails
+      : [
+          { parameter: "Weight",     min: "", max: "", actualValue: "" },
+          { parameter: "Dimension",  min: "", max: "", actualValue: "" },
+        ];
+
+    // 5️⃣ Update state in one go
+    setGrnData(prev => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], ...updatedItem };
+      return { ...prev, items, qualityCheckDetails: qc };
+    });
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // 🗑 Remove an item row – fixes the old bug (was setFormData)
+  // ---------------------------------------------------------------------------
+  const removeItemRow = useCallback(index => {
+    setGrnData(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // ➕ Add empty item row (initial numeric values = 0) so user can pick item
+  // ---------------------------------------------------------------------------
   const addItemRow = useCallback(() => {
-    setFormData((prev) => ({
+    setGrnData(prev => ({
       ...prev,
       items: [
         ...prev.items,
         {
+          item: "",
           itemCode: "",
           itemName: "",
           itemDescription: "",
           quantity: 0,
+          allowedQuantity: 0,
           unitPrice: 0,
           discount: 0,
           freight: 0,
-          gstType: 0,
+          gstRate: 0,
+          taxOption: "GST",
+          igstRate: 0,
           priceAfterDiscount: 0,
           totalAmount: 0,
           gstAmount: 0,
-          tdsAmount: 0,
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
           managedBy: "",
           batches: [],
+          errorMessage: "",
         },
       ],
     }));
   }, []);
 
-  const handleRemoveItem = (index) => {
-    const updatedItems = formData.items.filter((_, i) => i !== index);
-    setFormData((prev) => ({ ...prev, items: updatedItems }));
-  };
+  // ---------------------------------------------------------------------------
+  // Handle inline edits inside the ItemSection (qty, unit price, discount…)
+  // ---------------------------------------------------------------------------
+  const handleItemChange = useCallback((idx, e) => {
+    const { name, value } = e.target;
+    const numericFields = [
+      "quantity", "unitPrice", "discount", "freight", "gstRate", "igstRate",
+    ];
+    const newValue = numericFields.includes(name) ? +value || 0 : value;
 
-  // Declare handleItemSelect before its usage.
-  const handleItemSelect = useCallback(async (index, selectedItem) => {
-    if (!selectedItem._id) {
-      toast.error("Selected item does not have a valid ID.");
-      return;
-    }
-    let managedBy = selectedItem.managedBy;
-    if (!managedBy || managedBy.trim() === "") {
-      try {
-        const res = await axios.get(`/api/items/${selectedItem._id}`);
-        if (res.data.success) {
-          managedBy = res.data.data.managedBy;
-          console.log(`Fetched managedBy for ${selectedItem.itemCode}:`, managedBy);
-        }
-      } catch (error) {
-        console.error("Error fetching item master details:", error);
-        managedBy = "";
-      }
-    } else {
-      console.log(`Using managedBy from selected item for ${selectedItem.itemCode}:`, managedBy);
-    }
-    const unitPrice = Number(selectedItem.unitPrice) || 0;
-    const discount = Number(selectedItem.discount) || 0;
-    const freight = Number(selectedItem.freight) || 0;
-    const quantity = 1;
-    const taxOption = selectedItem.taxOption || "GST";
-    const gstRate = selectedItem.gstRate ? Number(selectedItem.gstRate) : 0;
-    const priceAfterDiscount = unitPrice - discount;
-    const totalAmount = quantity * priceAfterDiscount + freight;
-    const cgstRate = selectedItem.cgstRate ? Number(selectedItem.cgstRate) : gstRate / 2;
-    const sgstRate = selectedItem.sgstRate ? Number(selectedItem.sgstRate) : gstRate / 2;
-    const cgstAmount = totalAmount * (cgstRate / 100);
-    const sgstAmount = totalAmount * (sgstRate / 100);
-    const gstAmount = cgstAmount + sgstAmount;
-    const igstAmount = taxOption === "IGST" ? totalAmount * (gstRate / 100) : 0;
+    setGrnData(prev => {
+      const items = [...prev.items];
+      const item  = { ...items[idx], [name]: newValue };
 
-    const updatedItem = {
-      item: selectedItem._id,
-      itemCode: selectedItem.itemCode || "",
-      itemName: selectedItem.itemName,
-      itemDescription: selectedItem.description || "",
-      unitPrice,
-      discount,
-      freight,
-      gstType: selectedItem.gstType || 0,
-      priceAfterDiscount,
-      totalAmount,
-      gstAmount,
-      tdsAmount: 0,
-      managedBy,
-      batches: managedBy && managedBy.trim().toLowerCase() === "batch" ? [] : [],
-    };
+      // Recalculate price‑dependent fields on every edit
+      const unitPrice = +item.unitPrice || 0;
+      const discount  = +item.discount  || 0;
+      const quantity  = +item.quantity  || 1;
+      const freight   = +item.freight   || 0;
+      item.priceAfterDiscount = unitPrice - discount;
+      item.totalAmount        = quantity * (unitPrice - discount) + freight;
 
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      updatedItems[index] = { ...updatedItems[index], ...updatedItem };
-      return { ...prev, items: updatedItems };
+      items[idx] = item;
+      return { ...prev, items };
     });
   }, []);
 
+  // ---------------------------------------------------------------------------
+  // Barcode handler → auto adds a new row and selects the scanned item
+  // ---------------------------------------------------------------------------
   const handleBarcodeScan = useCallback(async () => {
-    if (!barcode) {
+    if (!barcode.trim()) {
       toast.error("Please enter a barcode.");
       return;
     }
     try {
-      const response = await axios.get(`/api/barcode/${barcode}`);
-      if (response.data && response.data.success) {
-        const scannedItem = response.data.data;
-        addItemRow();
-        setTimeout(() => {
-          const newIndex = formData.items.length;
-          handleItemSelect(newIndex, scannedItem);
-        }, 0);
-        toast.success("Item added via barcode.");
-      } else {
+      const res = await axios.get(`/api/barcode/${barcode.trim()}`);
+      if (!res.data.success) {
         toast.error("Item not found for this barcode.");
+        return;
       }
-    } catch (error) {
-      console.error("Barcode scan error", error);
+      const scannedItem = res.data.data;
+      addItemRow();
+      // Wait for state update then inject selected item
+      setTimeout(() => {
+        handleItemSelect(grnData.items.length, scannedItem);
+      }, 0);
+      toast.success("Item added via barcode.");
+      setBarcode(""); // clear input
+    } catch (err) {
+      console.error("Barcode scan error", err);
       toast.error("Error scanning barcode.");
     }
-  }, [barcode, formData.items, addItemRow, handleItemSelect]);
+  }, [barcode, grnData.items.length, addItemRow, handleItemSelect]);
 
-  // Batch modal handlers.
-  const openBatchModal = useCallback((itemIndex) => {
-    setSelectedBatchItemIndex(itemIndex);
+  // ---------------------------------------------------------------------------
+  // 🔄 Effect: If any item lacks managedBy, fetch it lazily (batch or serial)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    // Count how many items still missing managedBy
+    const pending = grnData.items.filter(i => i.item && !i.managedBy?.trim()).length;
+    if (pending === 0) return; // nothing to do
+
+    (async () => {
+      const updatedItems = await Promise.all(
+        grnData.items.map(async (it) => {
+          if (!it.item || it.managedBy?.trim()) return it;
+          try {
+            const res = await axios.get(`/api/items/${it.item}`);
+            return res.data.success ? { ...it, managedBy: res.data.data.managedBy } : it;
+          } catch (err) {
+            console.error("Error fetching managedBy for", it.item, err);
+            return it;
+          }
+        })
+      );
+      setGrnData(prev => ({ ...prev, items: updatedItems }));
+    })();
+  }, [grnData.items]);
+
+  // ---------------------------------------------------------------------------
+  // Batch modal open / close & entry changes
+  // ---------------------------------------------------------------------------
+  const openBatchModal = (index) => {
+    setSelectedBatchItemIndex(index);
     setShowBatchModal(true);
-  }, []);
-
-  const closeBatchModal = useCallback(() => {
+  };
+  const closeBatchModal = () => {
     setShowBatchModal(false);
     setSelectedBatchItemIndex(null);
-  }, []);
-
-  const handleBatchEntryChange = useCallback((itemIndex, batchIndex, field, value) => {
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      const currentItem = { ...updatedItems[itemIndex] };
-      if (!currentItem.batches) currentItem.batches = [];
-      const updatedBatches = [...currentItem.batches];
-      updatedBatches[batchIndex] = { ...updatedBatches[batchIndex], [field]: value };
-      currentItem.batches = updatedBatches;
-      updatedItems[itemIndex] = currentItem;
-      return { ...prev, items: updatedItems };
+  };
+  const handleBatchEntryChange = (itemIdx, batchIdx, field, value) => {
+    // Force numeric for quantity
+    if (field === "batchQuantity") value = +value || 0;
+    setGrnData(prev => {
+      const items = [...prev.items];
+      const batches = [...(items[itemIdx].batches || [])];
+      batches[batchIdx] = { ...batches[batchIdx], [field]: value };
+      items[itemIdx] = { ...items[itemIdx], batches };
+      return { ...prev, items };
     });
-  }, []);
+  };
+  const addBatchEntry = () => {
+    if (selectedBatchItemIndex === null) return;
+    setGrnData(prev => {
+      const items = [...prev.items];
+      const currItem = { ...items[selectedBatchItemIndex] };
+      const last = currItem.batches[currItem.batches.length - 1];
 
-  const addBatchEntry = useCallback(() => {
-    setFormData((prev) => {
-      const updatedItems = [...prev.items];
-      const currentItem = { ...updatedItems[selectedBatchItemIndex] };
-      if (!currentItem.batches) currentItem.batches = [];
-      const lastEntry = currentItem.batches[currentItem.batches.length - 1];
-      if (
-        lastEntry &&
-        lastEntry.batchNumber === "" &&
-        lastEntry.expiryDate === "" &&
-        lastEntry.manufacturer === "" &&
-        (lastEntry.batchQuantity === 0 || lastEntry.batchQuantity === "")
-      ) {
-        return { ...prev, items: updatedItems };
-      }
-      currentItem.batches.push({
+      // Prevent adding multiple blank rows
+      if (last && !last.batchNumber && !last.manufacturer && !last.batchQuantity) return prev;
+
+      currItem.batches.push({
         batchNumber: "",
-        expiryDate: "",
+        expiryDate:  "",
         manufacturer: "",
         batchQuantity: 0,
       });
-      updatedItems[selectedBatchItemIndex] = currentItem;
-      return { ...prev, items: updatedItems };
+      items[selectedBatchItemIndex] = currItem;
+      return { ...prev, items };
     });
-  }, [selectedBatchItemIndex]);
+  };
 
-  // Summary Calculation: recalculate totals including freight and rounding.
+  // ---------------------------------------------------------------------------
+  // 📊  Summary calculation – runs whenever items / freight / rounding change
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const totalBeforeDiscountCalc = formData.items.reduce((acc, item) => {
-      const unitPrice = Number(item.unitPrice) || 0;
-      const discount = Number(item.discount) || 0;
-      const quantity = Number(item.quantity) || 1;
-      return acc + (unitPrice - discount) * quantity;
+    const taxable = grnData.items.reduce((acc, it) => {
+      const price = +it.unitPrice || 0;
+      const disc  = +it.discount  || 0;
+      const qty   = +it.quantity  || 1;
+      return acc + (price - disc) * qty;
     }, 0);
-    const totalItemsCalc = formData.items.reduce(
-      (acc, item) => acc + (Number(item.totalAmount) || 0),
-      0
-    );
-    const gstTotalCalc = formData.items.reduce((acc, item) => {
-      if (item.taxOption === "IGST") {
-        return acc + (Number(item.igstAmount) || 0);
-      }
-      return acc + (Number(item.gstAmount) || 0);
-    }, 0);
-    const freightAdj = Number(formData.freight) || 0;
-    const roundingAdj = Number(formData.rounding) || 0;
-    const grandTotalCalc = totalItemsCalc + gstTotalCalc + freightAdj + roundingAdj;
-    setFormData((prev) => ({
-      ...prev,
-      totalBeforeDiscount: totalBeforeDiscountCalc,
-      gstTotal: gstTotalCalc,
-      grandTotal: grandTotalCalc,
-    }));
-  }, [formData.items, formData.freight, formData.rounding]);
 
-  const handleSubmit = async () => {
-    if (editId) {
+    const itemsTotal = grnData.items.reduce((sum, it) => sum + (+it.totalAmount || 0), 0);
+
+    const gstTotal = grnData.items.reduce((sum, it) => {
+      return sum + (it.taxOption === "IGST" ? +it.igstAmount || 0 : +it.gstAmount || 0);
+    }, 0);
+
+    const grandTotal = Math.round((itemsTotal + gstTotal + (+grnData.freight || 0) + (+grnData.rounding || 0)) * 100) / 100;
+
+    setSummary({ totalBeforeDiscount: taxable, gstTotal, grandTotal });
+    setGrnData(prev => ({ ...prev, totalBeforeDiscount: taxable, gstTotal, grandTotal, remainingAmount: grandTotal }));
+  }, [grnData.items, grnData.freight, grnData.rounding]);
+
+  // ---------------------------------------------------------------------------
+  // Helper to NORMALISE items when copying from PO / GRN (shared by both)
+  // ---------------------------------------------------------------------------
+  const normaliseCopiedItem = async (item) => {
+    // Ensure managedBy present
+    if (!item.managedBy?.trim()) {
       try {
-        await axios.put(`/api/purchaseInvoice/${editId}`, formData, {
-          headers: { "Content-Type": "application/json" },
-        });
-        alert("Invoice updated successfully");
-        router.push("/admin/purchaseInvoice-view");
-      } catch (error) {
-        console.error("Error updating invoice:", error);
-        alert("Failed to update invoice");
-      }
-    } else {
+        const res = await axios.get(`/api/items/${item.item}`);
+        if (res.data.success) item.managedBy = res.data.data.managedBy;
+      } catch (_) { /* ignore */ }
+    }
+    // Sanitize DB _id and fill defaults
+    delete item._id;
+    return {
+      ...item,
+      allowedQuantity: item.allowedQuantity || item.quantity,
+      batches: item.managedBy?.toLowerCase() === "batch"
+        ? (item.batches?.length ? item.batches : [{ batchNumber: "", expiryDate: "", manufacturer: "", batchQuantity: 0 }])
+        : [],
+      gstRate: item.gstRate || 0,
+      taxOption: item.taxOption || "GST",
+      igstRate: item.taxOption === "IGST" && !+item.igstRate ? item.gstRate : item.igstRate || 0,
+      cgstRate: item.taxOption === "GST" && !+item.cgstRate ? item.gstRate / 2 : item.cgstRate || 0,
+      sgstRate: item.taxOption === "GST" && !+item.sgstRate ? item.gstRate / 2 : item.sgstRate || 0,
+      qualityCheckDetails: item.qualityCheckDetails?.length ? item.qualityCheckDetails : [
+        { parameter: "Weight", min: "", max: "", actualValue: "" },
+        { parameter: "Dimension", min: "", max: "", actualValue: "" },
+      ],
+    };
+  };
+
+  // ---------------------------------------------------------------------------
+  // Copy from Purchase Order (sessionStorage key: purchaseInvoiceData)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    (async () => {
+      if (typeof window === "undefined") return;
+      const raw = sessionStorage.getItem("purchaseInvoiceData");
+      if (!raw) return;
+
       try {
-        await axios.post("/api/purchaseInvoice", formData, {
-          headers: { "Content-Type": "application/json" },
-        });
-        alert("Purchase Invoice added successfully");
-        setFormData(initialState);
-        router.push("/admin/purchaseInvoice-view");
-      } catch (error) {
-        console.error("Error adding Purchase Invoice:", error);
-        alert("Error adding Purchase Invoice");
+        const parsed = JSON.parse(raw);
+        parsed.invoiceType = "POCopy";
+        if (parsed._id) {
+          parsed.purchaseOrderId = parsed._id; // keep ref
+          delete parsed._id;
+        }
+        // Normalise every item in parallel
+        parsed.items = await Promise.all(parsed.items.map(normaliseCopiedItem));
+        setGrnData(parsed);
+        sessionStorage.removeItem("purchaseInvoiceData");
+        setIsCopied(true);
+        toast.info("PO data loaded into Purchase Invoice form.");
+      } catch (err) {
+        console.error("Error parsing PO data:", err);
+        toast.error("Failed to load PO copy data.");
       }
+    })();
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Copy from GRN (sessionStorage key: grnData)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    (async () => {
+      if (typeof window === "undefined") return;
+      const raw = sessionStorage.getItem("grnData");
+      if (!raw) return;
+
+      try {
+        const parsed = JSON.parse(raw);
+        parsed.invoiceType = "GRNCopy";
+        if (parsed._id) {
+          parsed.goodsReceiptId = parsed._id; // map for backend
+          // delete parsed._id;
+        }
+        parsed.items = await Promise.all(parsed.items.map(normaliseCopiedItem));
+        setGrnData(parsed);
+        sessionStorage.removeItem("grnData");
+        setIsCopied(true);
+        toast.info("GRN copy data loaded into Purchase Invoice form.");
+      } catch (err) {
+        console.error("Error parsing GRN copy data:", err);
+        toast.error("Failed to load GRN copy data.");
+      }
+    })();
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Save Invoice – performs client‑side validations then POSTs to API
+  // ---------------------------------------------------------------------------
+  const handleSaveInvoice = async () => {
+    // ✅ Validate quantities vs allowedQuantity & batch quantities
+    for (const it of grnData.items) {
+      const allowed = +it.allowedQuantity || 0;
+      if (allowed && +it.quantity > allowed) {
+        toast.error(`Item ${it.itemCode}: quantity exceeds allowed (${allowed}).`);
+        return;
+      }
+      if (it.managedBy?.toLowerCase() === "batch") {
+        const batchTotal = (it.batches || []).reduce((s, b) => s + (+b.batchQuantity || 0), 0);
+        if (batchTotal !== +it.quantity) {
+          toast.error(`Batch mismatch for item ${it.itemCode}: ${batchTotal} ≠ ${it.quantity}`);
+          return;
+        }
+      }
+    }
+
+    try {
+      const res = await axios.post("/api/purchaseInvoice", grnData, { headers: { "Content-Type": "application/json" } });
+      toast.success(`Invoice saved. ID: ${res.data.invoiceId}`);
+      setGrnData(initialGRNState);
+      router.push(`/admin/purchaseInvoice-view/${res.data.invoiceId}`);
+    } catch (err) {
+      console.error("Error saving invoice:", err);
+      toast.error(err.response?.data?.message || "Error saving invoice");
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Cancel – reset form to initial state
+  // ---------------------------------------------------------------------------
+  const handleCancel = () => {
+    setGrnData(initialGRNState);
+    toast.info("Purchase Invoice form cleared.");
+  };
+
+  // ---------------------------------------------------------------------------
+  // Copy current invoice → PO (rare but sometimes needed)
+  // ---------------------------------------------------------------------------
+  const handleCopyToPO = () => {
+    sessionStorage.setItem("grnData", JSON.stringify(grnData));
+    router.push("/admin/purchase-order");
+  };
+
+  // ===============================
+  // 8️⃣ JSX – The form UI
+  // ===============================
   return (
-    <div className="m-11 p-5 shadow-xl" ref={parentRef}>
-      <h1 className="text-2xl font-bold mb-4">
-        {editId ? "Edit Invoice" : "Create Invoice"}
-      </h1>
-      {/* Barcode Scan Section */}
-      <div className="mb-6 p-4 border rounded-lg shadow-lg">
-        <h2 className="text-lg font-semibold mb-2">Barcode Scan</h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Enter Barcode"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            className="flex-1 p-2 border rounded"
-          />
-          <button
-            type="button"
-            onClick={handleBarcodeScan}
-            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            Scan Barcode
-          </button>
-        </div>
-      </div>
-      {/* Supplier & Invoice Header Section */}
-      <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-        <div className="grid grid-cols-2 gap-7">
+    <div ref={parentRef} className="m-11 p-5 shadow-xl rounded-md bg-white">
+      <h1 className="text-2xl font-bold mb-6">Purchase Invoice Form</h1>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Supplier & Document details */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="flex flex-wrap gap-6 border p-6 rounded-lg shadow-sm mb-8">
+        {/* Left column */}
+        <div className="grow md:basis-1/2 space-y-4">
+          {/* Supplier Code (readonly once selected) */}
           <div>
-            <label className="block mb-2 font-medium">Supplier Name</label>
-             {formData.supplierName ? (
-                          <input
-                            type="text"
-                            name="supplierName"
-                            value={formData.supplierName}
-                            readOnly
-                            className="w-full p-2 border rounded bg-gray-100"
-                          />
-                        ) : (
-                          <SupplierSearch onSelectSupplier={handleSupplierSelect} />
-                        )}
-            {/* <SupplierSearch onSelectSupplier={handleSupplierSelect} /> */}
-          </div>
-          <div>
-            <label className="block mb-2 font-medium">Supplier Code</label>
+            <label className="block font-medium mb-1">Supplier Code</label>
             <input
-              type="text"
+              className="w-full border rounded px-2 py-1 bg-gray-100"
               name="supplierCode"
-              value={formData.supplierCode || ""}
+              value={grnData.supplierCode}
               readOnly
-              className="w-full p-2 border rounded bg-gray-100"
             />
           </div>
+
+          {/* Supplier Name – either readonly or search component */}
           <div>
-            <label className="block mb-2 font-medium">Contact Person</label>
+            <label className="block font-medium mb-1">Supplier Name</label>
+            {grnData.supplierName ? (
+              <input
+                className="w-full border rounded px-2 py-1 bg-gray-100"
+                name="supplierName"
+                value={grnData.supplierName}
+                readOnly
+              />
+            ) : (
+              <SupplierSearch onSelectSupplier={handleSupplierSelect} />
+            )}
+          </div>
+
+          {/* Contact Person */}
+          <div>
+            <label className="block font-medium mb-1">Contact Person</label>
             <input
-              type="text"
+              className="w-full border rounded px-2 py-1 bg-gray-100"
               name="contactPerson"
-              value={formData.contactPerson || ""}
+              value={grnData.contactPerson}
               readOnly
-              className="w-full p-2 border rounded bg-gray-100"
             />
           </div>
+
+          {/* Reference Number */}
           <div>
-            <label className="block mb-2 font-medium">Reference Number</label>
+            <label className="block font-medium mb-1">Reference Number</label>
             <input
-              type="text"
+              className="w-full border rounded px-2 py-1"
               name="refNumber"
-              value={formData.remarks || ""}
+              value={grnData.refNumber}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
             />
           </div>
-        </div>
-        {/* Additional Invoice Details */}
-        <div className="w-full md:w-1/2 space-y-4">
+
+          {/* Invoice Type */}
           <div>
-            <label className="block mb-2 font-medium">Status</label>
+            <label className="block font-medium mb-1">Invoice Type</label>
             <select
-              name="status"
-              value={formData.status || ""}
+              name="invoiceType"
+              value={grnData.invoiceType}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              className="w-full border rounded px-2 py-1"
             >
-              <option value="">Select status (optional)</option>
-              <option value="Open">Open</option>
-              <option value="Closed">Closed</option>
-              <option value="Pending">Pending</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="Normal">Normal</option>
+              <option value="POCopy">PO Copy</option>
+              <option value="GRNCopy">GRN Copy</option>
             </select>
           </div>
+        </div>
+
+        {/* Right column */}
+        <div className="grow md:basis-1/2 space-y-4">
+          {/* Status */}
           <div>
-            <label className="block mb-2 font-medium">Posting Date</label>
+            <label className="block font-medium mb-1">Status</label>
+            <select
+              name="status"
+              value={grnData.status}
+              onChange={handleInputChange}
+              className="w-full border rounded px-2 py-1"
+            >
+              <option value="">Select status</option>
+              <option value="Pending">Pending</option>
+              <option value="Paid">Paid</option>
+            </select>
+          </div>
+
+          {/* Posting Date */}
+          <div>
+            <label className="block font-medium mb-1">Posting Date</label>
             <input
               type="date"
               name="postingDate"
-              value={formData.postingDate || ""}
+              value={formatDateForInput(grnData.postingDate)}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              className="w-full border rounded px-2 py-1"
             />
           </div>
+
+          {/* Valid Until */}
           <div>
-            <label className="block mb-2 font-medium">Valid Until</label>
+            <label className="block font-medium mb-1">Valid Until</label>
             <input
               type="date"
               name="validUntil"
-              value={formData.validUntil || ""}
+              value={formatDateForInput(grnData.validUntil)}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              className="w-full border rounded px-2 py-1"
             />
           </div>
+
+          {/* Document Date */}
           <div>
-            <label className="block mb-2 font-medium">Delivery Date</label>
+            <label className="block font-medium mb-1">Document Date</label>
             <input
               type="date"
               name="documentDate"
-              value={formData.documentDate || ""}
+              value={formatDateForInput(grnData.documentDate)}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              className="w-full border rounded px-2 py-1"
             />
           </div>
-        
         </div>
       </div>
-      {/* Items Section */}
-      <h2 className="text-xl font-semibold mt-6">Items</h2>
-      <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
+
+      {/* ------------------------------------------------------------------- */}
+      {/* ItemSection – reusable child + handlers passed as props */}
+      {/* ------------------------------------------------------------------- */}
+      <h2 className="text-xl font-semibold mb-4">Items</h2>
+      <div className="border rounded-lg shadow-sm p-6 mb-8">
         <ItemSection
-          items={formData.items}
-          onItemChange={handleItemChange}
+          items={grnData.items}
           onAddItem={addItemRow}
-          onRemoveItem={handleRemoveItem}
+          onItemChange={handleItemChange}
+          onItemSelect={handleItemSelect}
+          onRemoveItem={removeItemRow}
         />
+
+        {/* Barcode quick‑add */}
+        <div className="flex mt-4 gap-2">
+          <input
+            className="flex-grow border rounded px-2 py-1"
+            placeholder="Scan / Enter barcode"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleBarcodeScan()}
+          />
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={handleBarcodeScan}
+          >
+            Add by Barcode
+          </button>
+        </div>
       </div>
-      {/* Batch Modal Trigger */}
-      <div className="mb-8">
-        {formData.items.map((item, index) =>
-          item.itemCode && item.managedBy && item.managedBy.trim().toLowerCase() === "batch" ? (
-            <div key={index} className="flex items-center justify-between border p-3 rounded mb-2">
-              <div>
-                <strong>{item.itemCode} - {item.itemName}</strong>
-                <span className="ml-2 text-sm text-gray-600">(Unit Price: {item.unitPrice})</span>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Batch‑modal trigger list – one button per batch‑managed item */}
+      {/* ------------------------------------------------------------------- */}
+      {grnData.items.some(it => it.managedBy?.toLowerCase() === "batch") && (
+        <div className="mb-8 space-y-2">
+          {grnData.items.map((it, idx) => (
+            it.managedBy?.toLowerCase() === "batch" ? (
+              <div key={idx} className="flex justify-between items-center border p-3 rounded">
+                <span>
+                  <strong>{it.itemCode}</strong> – {it.itemName}
+                </span>
+                <button
+                  className="bg-green-600 text-white px-3 py-1 rounded"
+                  onClick={() => openBatchModal(idx)}
+                >
+                  Set Batch Details
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedBatchItemIndex(index);
-                  setShowBatchModal(true);
-                }}
-                className="px-3 py-1 bg-green-500 text-white rounded"
-              >
-                Set Batch Details
-              </button>
-            </div>
-          ) : null
-        )}
-      </div>
-      {/* Batch Modal */}
+            ) : null
+          ))}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Batch Modal – appears over screen; uses selectedBatchItemIndex */}
+      {/* ------------------------------------------------------------------- */}
       {showBatchModal && selectedBatchItemIndex !== null && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg max-w-lg w-full">
-            <h2 className="text-xl font-semibold mb-2">
-              Batch Details for {formData.items[selectedBatchItemIndex].itemCode} - {formData.items[selectedBatchItemIndex].itemName}
-            </h2>
-            <p className="mb-4 text-sm text-gray-600">
-              Unit Price: {formData.items[selectedBatchItemIndex].unitPrice}
-            </p>
-            {formData.items[selectedBatchItemIndex].batches.length > 0 ? (
-              <table className="w-full table-auto border-collapse mb-4">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border p-2">Batch Number</th>
-                    <th className="border p-2">Expiry Date</th>
-                    <th className="border p-2">Manufacturer</th>
-                    <th className="border p-2">Batch Quantity</th>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full space-y-4">
+            <h3 className="text-xl font-semibold">
+              Batch Details – {grnData.items[selectedBatchItemIndex].itemCode}
+            </h3>
+            {/* Table of existing batches */}
+            <table className="w-full text-sm border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border px-2 py-1">Batch #</th>
+                  <th className="border px-2 py-1">Expiry</th>
+                  <th className="border px-2 py-1">Manufacturer</th>
+                  <th className="border px-2 py-1">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {grnData.items[selectedBatchItemIndex].batches.map((b, bIdx) => (
+                  <tr key={bIdx}>
+                    {/** Batch Number */}
+                    <td className="border px-2 py-1">
+                      <input
+                        className="w-full border rounded px-1"
+                        value={b.batchNumber}
+                        onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, bIdx, "batchNumber", e.target.value)}
+                      />
+                    </td>
+                    {/** Expiry */}
+                    <td className="border px-2 py-1">
+                      <input
+                        type="date"
+                        className="w-full border rounded px-1"
+                        value={b.expiryDate}
+                        onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, bIdx, "expiryDate", e.target.value)}
+                      />
+                    </td>
+                    {/** Manufacturer */}
+                    <td className="border px-2 py-1">
+                      <input
+                        className="w-full border rounded px-1"
+                        value={b.manufacturer}
+                        onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, bIdx, "manufacturer", e.target.value)}
+                      />
+                    </td>
+                    {/** Quantity */}
+                    <td className="border px-2 py-1">
+                      <input
+                        type="number"
+                        className="w-full border rounded px-1"
+                        value={b.batchQuantity}
+                        onChange={(e) => handleBatchEntryChange(selectedBatchItemIndex, bIdx, "batchQuantity", e.target.value)}
+                      />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {formData.items[selectedBatchItemIndex].batches.map((batch, batchIdx) => (
-                    <tr key={batchIdx}>
-                      <td className="border p-2">
-                        <input
-                          type="text"
-                          value={batch.batchNumber || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "batchNumber", e.target.value)
-                          }
-                          className="w-full p-1 border rounded"
-                        />
-                      </td>
-                      <td className="border p-2">
-                        <input
-                          type="date"
-                          value={batch.expiryDate || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "expiryDate", e.target.value)
-                          }
-                          className="w-full p-1 border rounded"
-                        />
-                      </td>
-                      <td className="border p-2">
-                        <input
-                          type="text"
-                          value={batch.manufacturer || ""}
-                          onChange={(e) =>
-                            handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "manufacturer", e.target.value)
-                          }
-                          className="w-full p-1 border rounded"
-                        />
-                      </td>
-                      <td className="border p-2">
-                        <input
-                          type="number"
-                          value={batch.batchQuantity || 0}
-                          onChange={(e) =>
-                            handleBatchEntryChange(selectedBatchItemIndex, batchIdx, "batchQuantity", e.target.value)
-                          }
-                          className="w-full p-1 border rounded"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="mb-4">No batch entries yet.</p>
-            )}
-            <button
-              type="button"
-              onClick={addBatchEntry}
-              className="px-4 py-2 bg-green-500 text-white rounded mb-4"
-            >
+                ))}
+              </tbody>
+            </table>
+
+            {/* Add batch row */}
+            <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={addBatchEntry}>
               Add Batch Entry
             </button>
+
+            {/* Footer buttons */}
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(false)}
-                className="px-4 py-2 bg-blue-500 text-white rounded"
-              >
-                Save &amp; Close
+              <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={closeBatchModal}>
+                Save & Close
               </button>
             </div>
           </div>
         </div>
       )}
-      {/* Additional Invoice Fields & Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Sales Employee & Remarks */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="grid md:grid-cols-2 gap-6 border p-6 rounded-lg shadow-sm mb-8">
         <div>
-          <label className="block mb-2 font-medium">Sales Employee</label>
+          <label className="block font-medium mb-1">Sales Employee</label>
           <input
-            type="text"
             name="salesEmployee"
-            value={formData.salesEmployee || ""}
+            value={grnData.salesEmployee}
             onChange={handleInputChange}
-            className="w-full p-2 border rounded"
+            className="w-full border rounded px-2 py-1"
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">Remarks</label>
+          <label className="block font-medium mb-1">Remarks</label>
           <textarea
             name="remarks"
-            value={formData.remarks || ""}
+            value={grnData.remarks}
             onChange={handleInputChange}
-            className="w-full p-2 border rounded"
-          ></textarea>
-        </div>
-      </div>
-      {/* Summary Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-        <div>
-          <label className="block mb-2 font-medium">Taxable Amount</label>
-          <input
-            type="number"
-            name="totalBeforeDiscount"
-            value={formData.totalBeforeDiscount || 0}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
-          />
-        </div>
-          {/* Editable Freight & Rounding Fields */}
-      
-          <div>
-            <label className="block mb-2 font-medium">Rounding</label>
-            <input
-              type="number"
-              name="rounding"
-              value={formData.rounding || 0}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        <div>
-          <label className="block mb-2 font-medium">GST Total</label>
-          <input
-            type="number"
-            name="gstTotal"
-            value={formData.gstTotal || 0}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
-          />
-        </div>
-        <div>
-          <label className="block mb-2 font-medium">Grand Total</label>
-          <input
-            type="number"
-            name="grandTotal"
-            value={formData.grandTotal || 0}
-            readOnly
-            className="w-full p-2 border rounded bg-gray-100"
+            className="w-full border rounded px-2 py-1 h-24"
           />
         </div>
       </div>
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
-        <button
-          onClick={handleSubmit}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-        >
-          {editId ? "Update Invoice" : "Add Invoice"}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Summary totals */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="grid md:grid-cols-2 gap-6 border p-6 rounded-lg shadow-sm mb-8">
+        <div>
+          <label className="block font-medium mb-1">Taxable Amount</label>
+          <input
+            readOnly
+            className="w-full border rounded px-2 py-1 bg-gray-100"
+            value={summary.totalBeforeDiscount.toFixed(2)}
+          />
+        </div>
+        <div>
+          <label className="block font-medium mb-1">Rounding Adjustment</label>
+          <input
+            name="rounding"
+            type="number"
+            value={grnData.rounding}
+            onChange={handleInputChange}
+            className="w-full border rounded px-2 py-1"
+          />
+        </div>
+        <div>
+          <label className="block font-medium mb-1">GST Total</label>
+          <input
+            readOnly
+            className="w-full border rounded px-2 py-1 bg-gray-100"
+            value={summary.gstTotal.toFixed(2)}
+          />
+        </div>
+        <div>
+          <label className="block font-medium mb-1">Grand Total</label>
+          <input
+            readOnly
+            className="w-full border rounded px-2 py-1 bg-gray-100"
+            value={summary.grandTotal.toFixed(2)}
+          />
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Action buttons */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="flex flex-wrap gap-3">
+        <button className="bg-orange-500 text-white px-5 py-2 rounded" onClick={handleSaveInvoice}>
+          Save Invoice
         </button>
-        <button
-          onClick={() => router.push("/admin/purchaseInvoice-view")}
-          className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-        >
+        <button className="bg-gray-400 text-white px-5 py-2 rounded" onClick={handleCancel}>
           Cancel
         </button>
+        <button className="bg-blue-600 text-white px-5 py-2 rounded" onClick={handleCopyToPO}>
+          Copy To PO
+        </button>
       </div>
+
+      {/* Toast notifications container */}
       <ToastContainer />
     </div>
   );
 }
-
-export default PurchaseInvoiceFormWrapper;
-//////////////////////////////////////////////////////////////////////
-
-// "use client";
-
-// import { useState, useEffect, useCallback } from "react";
-// import { useRouter, useSearchParams,useParams } from "next/navigation";
-// import axios from "axios";
-// import ItemSection from "@/components/ItemSection";
-// import SupplierSearch from "@/components/SupplierSearch";
-// import Link from "next/link";
-// import { FaEdit } from "react-icons/fa";
-
-// const initialState = {
-//   supplierCode: "",
-//   supplierName: "",
-//   contactPerson: "",
-//   refNumber: "",
-//   status: "Open",
-//   postingDate: "",
-//   validUntil: "",
-//   documentDate: "",
-//   items: [
-//     {
-//       itemCode: "",
-//       itemName: "",
-//       itemDescription: "",
-//       quantity: 0,
-//       unitPrice: 0,
-//       discount: 0,
-//       freight: 0,
-//       gstType: 0,
-//       priceAfterDiscount: 0,
-//       totalAmount: 0,
-//       gstAmount: 0,
-//       tdsAmount: 0,
-//     },
-//   ],
-//   salesEmployee: "",
-//   remarks: "",
-//   freight: 0,
-//   rounding: 0,
-//   totalBeforeDiscount: 0,
-//   totalDownPayment: 0,
-//   appliedAmounts: 0,
-//   gstTotal: 0,
-//   grandTotal: 0,
-//   openBalance: 0,
-// };
-
-// function formatDateForInput(date) {
-//   if (!date) return "";
-//   const d = new Date(date);
-//   const year = d.getFullYear();
-//   const month = ("0" + (d.getMonth() + 1)).slice(-2);
-//   const day = ("0" + d.getDate()).slice(-2);
-//   return `${year}-${month}-${day}`;
-// }
-
-// export default function GrnForm() {
-//   const router = useRouter();
-//   const params = useParams();
-//   const searchParams = useSearchParams();
-//   const editId = searchParams.get("editId");
-
-//   const [formData, setFormData] = useState(initialState);
-
-//   useEffect(() => {
-//     if (editId) {
-//       axios
-//         .get(`/api/purchaseInvoice/${editId}`)
-//         .then((res) => {
-//           if (res.data.success) {
-//             const record = res.data.data;
-//             setFormData({
-//               ...record,
-//               postingDate: formatDateForInput(record.postingDate),
-//               validUntil: formatDateForInput(record.validUntil),
-//               documentDate: formatDateForInput(record.documentDate),
-//             });
-//             console.log(record)
-//           }
-//         })
-//         .catch((err) => {
-//           console.error("Error fetching GRN data for editing:", err);
-//         });
-//     }
-//   }, [editId]);
-
-  
-
-//   const handleSupplierSelect = useCallback((selectedSupplier) => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       supplierCode: selectedSupplier.supplierCode || "",
-//       supplierName: selectedSupplier.supplierName || "",
-//       contactPerson: selectedSupplier.contactPersonName || "",
-//     }));
-//   }, []);
-
-//   const handleInputChange = useCallback((e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   }, []);
-
-//   const handleItemChange = (index, field, value) => {
-//     const updatedItems = [...formData.items];
-//     updatedItems[index][field] = value;
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-//   const addItemRow = useCallback(() => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       items: [
-//         ...prev.items,
-//         {
-//           itemCode: "",
-//           itemName: "",
-//           itemDescription: "",
-//           quantity: 0,
-//           unitPrice: 0,
-//           discount: 0,
-//           freight: 0,
-//           gstType: 0,
-//           priceAfterDiscount: 0,
-//           totalAmount: 0,
-//           gstAmount: 0,
-//           tdsAmount: 0,
-//         },
-//       ],
-//     }));
-//   }, []);
-
-//   const handleRemoveItem = (index) => {
-//     const updatedItems = formData.items.filter((_, i) => i !== index);
-//     setFormData((prev) => ({ ...prev, items: updatedItems }));
-//   };
-
-//   const handleSubmit = async () => {
-//     if (editId) {
-//       try {
-//         await axios.put(`/api/purchaseInvoice/${editId}`, formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("invoice updated successfully");
-//         router.push("/admin/purchaseInvoice-view");
-//       } catch (error) {
-//         console.error("Error updating GRN:", error);
-//         alert("Failed to update GRN");
-//       }
-//     } else {
-//       try {
-//         await axios.post("/api/purchaseInvoice", formData, {
-//           headers: { "Content-Type": "application/json" },
-//         });
-//         alert("purchaseInvoice added successfully");
-//         setFormData(initialState);
-//         router.push("/admin/purchaseInvoice-view");
-//       } catch (error) {
-//         console.error("Error adding purchaseInvoice-view:", error);
-//         alert("Error adding purchaseInvoice-view");
-//       }
-//     }
-//   };
-//   return (
-//     <div className="m-11 p-5 shadow-xl">
-//       <h1 className="text-2xl font-bold mb-4">
-//         {editId ? "Edit Invoice" : "Create Invoice"}
-//       </h1>
-//       {/* Supplier Section */}
-//       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
-//         <div className="grid grid-cols-2 gap-7">
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Name</label>
-//             <SupplierSearch onSelectSupplier={handleSupplierSelect} />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Supplier Code</label>
-//             <input
-//               type="text"
-//               name="supplierCode"
-//               value={formData.supplierCode || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Contact Person</label>
-//             <input
-//               type="text"
-//               name="contactPerson"
-//               value={formData.contactPerson || ""}
-//               readOnly
-//               className="w-full p-2 border rounded bg-gray-100"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Reference Number</label>
-//             <input
-//               type="text"
-//               name="refNumber"
-//               value={formData.refNumber || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//         {/* Additional Order Info */}
-//         <div className="w-full md:w-1/2 space-y-4">
-//           <div>
-//             <label className="block mb-2 font-medium">Status</label>
-//             <select
-//               name="status"
-//               value={formData.status || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             >
-//               <option value="">Select status (optional)</option>
-//               <option value="Open">Open</option>
-//               <option value="Closed">Closed</option>
-//               <option value="Pending">Pending</option>
-//               <option value="Cancelled">Cancelled</option>
-//             </select>
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Posting Date</label>
-//             <input
-//               type="date"
-//               name="postingDate"
-//               value={formData.postingDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Valid Until</label>
-//             <input
-//               type="date"
-//               name="validUntil"
-//               value={formData.validUntil || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//           <div>
-//             <label className="block mb-2 font-medium">Delivery Date</label>
-//             <input
-//               type="date"
-//               name="documentDate"
-//               value={formData.documentDate || ""}
-//               onChange={handleInputChange}
-//               className="w-full p-2 border rounded"
-//             />
-//           </div>
-//         </div>
-//       </div>
-//       {/* Items Section */}
-//       <h2 className="text-xl font-semibold mt-6">Items</h2>
-//       <div className="flex flex-col m-10 p-5 border rounded-lg shadow-lg">
-//         <ItemSection
-//           items={formData.items}
-//           onItemChange={handleItemChange}
-//           onAddItem={addItemRow}
-//         />
-//       </div>
-//       {/* Other Form Fields & Summary */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Sales Employee</label>
-//           <input
-//             type="text"
-//             name="salesEmployee"
-//             value={formData.salesEmployee || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Remarks</label>
-//           <textarea
-//             name="remarks"
-//             value={formData.remarks || ""}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           ></textarea>
-//         </div>
-//       </div>
-//       {/* Summary Section */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <div>
-//           <label className="block mb-2 font-medium">Taxable Amount</label>
-//           <input
-//             type="number"
-//             name="taxableAmount"
-//             value={formData.items.reduce((acc, item) => acc + (parseFloat(item.totalAmount) || 0), 0)}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Rounding</label>
-//           <input
-//             type="number"
-//             name="rounding"
-//             value={formData.rounding || 0}
-//             onChange={handleInputChange}
-//             className="w-full p-2 border rounded"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">GST</label>
-//           <input
-//             type="number"
-//             name="gstTotal"
-//             value={formData.gstTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//         <div>
-//           <label className="block mb-2 font-medium">Total Amount</label>
-//           <input
-//             type="number"
-//             name="grandTotal"
-//             value={formData.grandTotal || 0}
-//             readOnly
-//             className="w-full p-2 border rounded bg-gray-100"
-//           />
-//         </div>
-//       </div>
-
-//       {/* Action Buttons */}
-//       <div className="flex flex-wrap gap-4 p-8 m-8 border rounded-lg shadow-lg">
-//         <button
-//           onClick={handleSubmit}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           {editId ? "Update" : "Add"}
-//         </button>
-//         <button
-//           onClick={() => router.push("/admin/grn-view")}
-//           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
-//         >
-//           Cancel
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }

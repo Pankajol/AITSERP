@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
   try {
     await dbConnect();
 
-    const id = params?.id;
+    const id = params?._id;
     if (!id) {
       return NextResponse.json({ message: "Missing ID" }, { status: 400 });
     }

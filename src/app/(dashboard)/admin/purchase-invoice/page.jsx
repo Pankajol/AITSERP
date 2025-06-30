@@ -180,6 +180,13 @@ export default function PurchaseInvoiceForm() {
     });
   }, []);
 
+    const removeItemRow = useCallback((index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  }, []);
+
   const addItemRow = useCallback(() => {
     setGrnData((prev) => ({
       ...prev,
@@ -568,26 +575,7 @@ export default function PurchaseInvoiceForm() {
   return (
     <div ref={parentRef} className="m-11 p-5 shadow-xl">
       <h1 className="text-2xl font-bold mb-4">Purchase Invoice Form</h1>
-      {/* Barcode Scan Section
-      <div className="mb-6 p-4 border rounded-lg shadow-lg">
-        <h2 className="text-lg font-semibold mb-2">Barcode Scan</h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Enter Barcode"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            className="flex-1 p-2 border rounded"
-          />
-          <button
-            type="button"
-            onClick={handleBarcodeScan}
-            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            Scan Barcode
-          </button>
-        </div>
-      </div> */}
+   
       {/* Supplier & Document Details */}
       <div className="flex flex-wrap justify-between m-10 p-5 border rounded-lg shadow-lg">
         <div className="basis-full md:basis-1/2 px-2 space-y-4">
@@ -664,6 +652,7 @@ export default function PurchaseInvoiceForm() {
           onItemChange={handleItemChange}
           onAddItem={addItemRow}
           onItemSelect={handleItemSelect}
+          onRemoveItem={removeItemRow}
         />
       </div>
       {/* Batch Modal Trigger */}

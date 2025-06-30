@@ -51,9 +51,10 @@ const SalesInvoiceItemSchema = new Schema(
 const SalesInvoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, unique: true },
+    customer: { type: Schema.Types.ObjectId, ref: "Customer" },
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
-    contactPerson: { type: String, required: true },
+    contactPerson: { type: String },
     refNumber: { type: String, unique: true },
     salesEmployee: { type: String },
     status: { type: String, enum: ["Pending", "Confirmed"], default: "Pending" },

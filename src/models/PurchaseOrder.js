@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Counter from './Counter';
 
 // If you don't need batch management, you can remove BatchSchema entirely.
 const BatchSchema = new mongoose.Schema({
@@ -22,6 +23,7 @@ const OrderItemSchema = new mongoose.Schema({
   orderedQuantity: { type: Number, required: true },
   receivedQuantity: { type: Number, default: 0 },
   itemDescription: { type: String },
+
   // We'll use "quantity" as the final quantity used in GRN calculations.
   quantity: { type: Number, default: 0 },
   unitPrice: { type: Number, default: 0 },
@@ -47,14 +49,17 @@ const OrderItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PurchaseOrderSchema = new mongoose.Schema({
+  purchasequotation: { type: mongoose.Schema.Types.ObjectId, ref: 'PurchaseQuotation' },
+ supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
   supplierCode: { type: String },
   supplierName: { type: String },
   contactPerson: { type: String },
   refNumber: { type: String },
+  documentNumber: { type: String, unique: true },
   // Status fields
   orderStatus: { 
     type: String, 
-    enum: ["Open", "Close", "Cancelled"], 
+    enum: ["Open", "Close", "Cancelled"],
     default: "Open" 
   },
   paymentStatus: { 
@@ -83,6 +88,22 @@ const PurchaseOrderSchema = new mongoose.Schema({
   openBalance: { type: Number, default: 0 },
 }, {
   timestamps: true,
+});
+
+PurchaseOrderSchema.pre("save", async function (next) {
+  if (!this.documentNumber) {
+    try {
+      const counter = await Counter.findOneAndUpdate(
+        { id: "PurchaseOrder" },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.documentNumber = `P0-${String(counter.seq).padStart(3, "0")}`;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
 });
 
 export default mongoose.models.PurchaseOrder || mongoose.model('PurchaseOrder', PurchaseOrderSchema);

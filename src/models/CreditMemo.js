@@ -33,6 +33,7 @@ const ItemSchema = new mongoose.Schema({
 });
 
 const CreditNoteSchema = new mongoose.Schema({
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   customerCode: { type: String, required: true },
   customerName: { type: String, required: true },
   contactPerson: { type: String, required: true },
