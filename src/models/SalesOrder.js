@@ -1,7 +1,22 @@
 import mongoose from "mongoose";
+import Counter from "./Counter"; // Assuming you have a Counter model for auto-incrementing IDs
+
+// Address schema for billing and shipping addresses
+const addressSchema = new mongoose.Schema({
+  address1: { type: String, trim: true },
+  address2: { type: String, trim: true },
+  city: { type: String, trim: true },
+  state: { type: String, trim: true },
+  zip: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{6}$/, "Invalid zip code format"]
+  },
+  country: { type: String, trim: true }
+}, { _id: false });
 
 const ItemSchema = new mongoose.Schema({
- item: { type: mongoose.Schema.Types.ObjectId, ref: "Item", required: true },
+      item: { type: mongoose.Schema.Types.ObjectId, ref: "Item" , required: false, },
       itemCode: { type: String },
       itemName: { type: String },
       itemDescription: { type: String },
@@ -36,6 +51,7 @@ const SalesOrderSchema = new mongoose.Schema(
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
     contactPerson: { type: String },
+    salesNumber: { type: String, unique: true },
     refNumber: { type: String },
     status: { type: String, default: "Open" },
     postingDate: { type: Date },
@@ -44,6 +60,15 @@ const SalesOrderSchema = new mongoose.Schema(
     fromQuote: { type: Boolean, default: false },
     validUntil: { type: Date },
     documentDate: { type: Date },
+    // Address fields
+    billingAddress: {
+      type: addressSchema,
+      required: false
+    },
+    shippingAddress: {
+      type: addressSchema,
+      required: false
+    },
     items: [ItemSchema],
     salesEmployee: { type: String },
     remarks: { type: String },
@@ -61,6 +86,25 @@ const SalesOrderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+SalesOrderSchema.pre("save", async function (next) {
+  if (!this.salesNumber) {
+    try {
+      const counter = await Counter.findOneAndUpdate(
+        { id: "SalesOrder" },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.salesNumber = `SALE-${String(counter.seq).padStart(3, "0")}`;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
+
+
+
 
 export default mongoose.models.SalesOrder ||
   mongoose.model("SalesOrder", SalesOrderSchema);

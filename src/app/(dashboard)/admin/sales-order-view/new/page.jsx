@@ -414,6 +414,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import ItemSection from "@/components/ItemSection";
 import CustomerSearch from "@/components/CustomerSearch";
+import CustomerAddressSelector from "@/components/CustomerAddressSelector";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -424,9 +425,11 @@ const initialOrderState = {
   contactPerson: "",
   refNumber: "",
   salesEmployee: "",
-  status: "Pending",
+  status: "Open",
   orderDate: "",
   expectedDeliveryDate: "",
+  billingAddress: null,
+  shippingAddress: null,
   items: [{
     item: "", itemCode: "", itemId: "", itemName: "", itemDescription: "",
     quantity: 0, allowedQuantity: 0, receivedQuantity: 0,
@@ -491,9 +494,22 @@ function SalesOrderForm() {
   const [isCopied, setIsCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
 
+  /* ---------- handlers ---------- */
 
+ 
+
+  // called when CustomerSearch reports “no match”
+  const onSearchNotFound = searchText => {
+    // pre‑fill the name so the user doesn’t re‑type it
+    setFormData(prev => ({ ...prev, customerName: searchText }));
+    setIsNewCustomer(true);
+  };
+
+  const handleNewCustomerToggle = () => setIsNewCustomer(prev => !prev);
 
 
 
@@ -526,27 +542,41 @@ function SalesOrderForm() {
                 taxOption: i.taxOption || "GST",
               }))
             : [...initialOrderState.items];
+          
+          // Set form data
           setFormData({
             ...initialOrderState,
             ...record,
             items,
+            billingAddress: record.billingAddress || null,
+            shippingAddress: record.shippingAddress || null,
             orderDate: formatDate(record.orderDate),
             expectedDeliveryDate: formatDate(record.expectedDeliveryDate),
           });
+          
+          // Set selected customer for address component
+          if (record.customerCode || record.customerName) {
+            setSelectedCustomer({
+              _id: record.customer || record.customerCode,
+              customerCode: record.customerCode,
+              customerName: record.customerName,
+              contactPersonName: record.contactPerson
+            });
+          }
         })
         .catch(err => setError(err.message || "Failed to load"))
         .finally(() => setLoading(false));
     }
   }, [editId]);
 
-    const onCustomer = useCallback((c) => {
-      setFormData((p) => ({
-        ...p,
-        customerCode: c.customerCode ?? "",
-        customerName: c.customerName ?? "",
-        contactPerson: c.contactPersonName ?? "",
-      }));
-    }, []);
+    // const onCustomer = useCallback((c) => {
+    //   setFormData((p) => ({
+    //     ...p,
+    //     customerCode: c.customerCode ?? "",
+    //     customerName: c.customerName ?? "",
+    //     contactPerson: c.contactPersonName ?? "",
+    //   }));
+    // }, []);
 
   // Recalculate totals
   useEffect(() => {
@@ -566,12 +596,15 @@ function SalesOrderForm() {
   }, [formData.items, formData.freight, formData.rounding, formData.totalDownPayment, formData.appliedAmounts]);
 
   // Handlers
-  const handleCustomerSelect = useCallback(c => {
+  const onCustomer = useCallback(c => {
+    setSelectedCustomer(c);
     setFormData(prev => ({
       ...prev,
       customerName: c.customerName,
       customerCode: c.customerCode,
       contactPerson: c.contactPersonName,
+      billingAddress: null,
+      shippingAddress: null,
     }));
   }, []);
 
@@ -655,7 +688,7 @@ const handleSubmit = async () => {
 
       {/* Customer & Meta */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div>
+      {/* <div>
             {editId || isCopied ? (
               <>
                 <label className="mb-2 block font-medium">
@@ -677,20 +710,81 @@ const handleSubmit = async () => {
                 <CustomerSearch onSelectCustomer={onCustomer} />
               </>
             )}
-          </div>
+          </div> */}
+
+           <div>
+      <label className="mb-2 block font-medium">Customer Name</label>
+
+      {/* CASE 1 – editing an existing record or copying -> always free text */}
+      {editId || isCopied ? (
+        <input
+          type="text"
+          name="customerName"
+          value={formData.customerName}
+          onChange={onInput}
+          className="w-full rounded border p-2"
+        />
+      ) : (
+        /* CASE 2 – brand‑new record */
+        <>
+          {isNewCustomer ? (
+            <>
+              <input
+                type="text"
+                name="customerName"
+                value={formData.customerName}
+                onChange={onInput}
+                placeholder="Enter new customer"
+                className="w-full rounded border p-2"
+              />
+              <button
+                type="button"
+                onClick={handleNewCustomerToggle}
+                className="mt-2 rounded bg-gray-200 px-3 py-1 text-sm"
+              >
+                ⬅︎ Back to search
+              </button>
+            </>
+          ) : (
+            <>
+              <CustomerSearch
+                onSelectCustomer={onCustomer}
+                onNotFound={onSearchNotFound} // 👈 add this prop inside CustomerSearch
+              />
+              <button
+                type="button"
+                onClick={() => setIsNewCustomer(true)}
+                className="mt-2 rounded bg-gray-200 px-3 py-1 text-sm"
+              >
+                + Add new customer
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
         <div>
           <label className="font-medium">Customer Code</label>
-          <input readOnly name="customerCode" value={formData.customerCode} className="w-full p-2 border bg-gray-100 rounded" />
+          <input  name="customerCode" value={formData.customerCode} onChange={handleChange} className="w-full p-2 border bg-gray-100 rounded" />
         </div>
         <div>
           <label className="font-medium">Contact Person</label>
-          <input readOnly name="contactPerson" value={formData.contactPerson} className="w-full p-2 border bg-gray-100 rounded" />
+          <input  name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="w-full p-2 border bg-gray-100 rounded" />
         </div>
         <div>
           <label className="font-medium">Reference No.</label>
           <input name="refNumber" value={formData.refNumber} onChange={handleChange} className="w-full p-2 border rounded" />
         </div>
       </div>
+
+      {/* Customer Address Selection */}
+      <CustomerAddressSelector
+        customer={selectedCustomer}
+        selectedBillingAddress={formData.billingAddress}
+        selectedShippingAddress={formData.shippingAddress}
+        onBillingAddressSelect={(address) => setFormData(prev => ({ ...prev, billingAddress: address }))}
+        onShippingAddressSelect={(address) => setFormData(prev => ({ ...prev, shippingAddress: address }))}
+      />
 
       {/* Dates & Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -705,7 +799,7 @@ const handleSubmit = async () => {
         <div>
           <label className="font-medium">Status</label>
           <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 border rounded">
-            <option>Pending</option><option>Closed</option><option>Cancelled</option>
+           <option>Open</option> <option>Pending</option><option>Closed</option><option>Cancelled</option>
           </select>
         </div>
       </div>

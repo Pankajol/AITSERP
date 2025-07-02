@@ -25,6 +25,16 @@ export async function POST(req) {
     }
 
     // ----- Create Sales Order Document -----
+    // Ensure addresses are properly structured
+    if (orderData.billingAddress && typeof orderData.billingAddress === 'object') {
+      // Remove _id if it exists to avoid conflicts
+      delete orderData.billingAddress._id;
+    }
+    if (orderData.shippingAddress && typeof orderData.shippingAddress === 'object') {
+      // Remove _id if it exists to avoid conflicts
+      delete orderData.shippingAddress._id;
+    }
+
     // Create using an array so we can use the returned document from create()
     const [order] = await SalesOrder.create([orderData], { session });
     console.log("Sales Order created with _id:", order._id);
@@ -133,15 +143,15 @@ export async function POST(req) {
 export async function GET(req) {
   try {
     await dbConnect();
-    const SalesOrders = await SalesOrder.find({});
-    return new Response(JSON.stringify(SalesOrders), {
+    const salesOrders = await SalesOrder.find({});
+    return new Response(JSON.stringify(salesOrders), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error fetching SalesOrders:", error);
+    console.error("Error fetching Sales Orders:", error);
     return new Response(
-      JSON.stringify({ message: "Error fetching SalesOrders", error: error.message }),
+      JSON.stringify({ message: "Error fetching Sales Orders", error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

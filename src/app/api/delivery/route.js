@@ -110,10 +110,10 @@ export async function POST(req) {
     if (isCopiedSO) {
       await SalesOrder.findByIdAndUpdate(
         deliveryData.salesOrderId,
-        { status: "Confirmed" },
+        { status: "Close" },
         { session }
       );
-      console.log(`Sales Order ${deliveryData.salesOrderId} updated to Confirmed`);
+      console.log(`Sales Order ${deliveryData.salesOrderId} updated to Close`);
     }
 
     await session.commitTransaction();

@@ -109,6 +109,46 @@ export default function InvoiceDetail() {
           </div>
         </div>
         
+        {/* Address Information */}
+        {(order.billingAddress || order.shippingAddress) && (
+          <div className="mt-6 pt-4 border-t">
+            <h2 className="text-xl font-semibold mb-4">Address Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Billing Address */}
+              {order.billingAddress && (
+                <div>
+                  <h3 className="font-medium mb-2 text-blue-600">Billing Address</h3>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    {order.billingAddress.address1 && <p>{order.billingAddress.address1}</p>}
+                    {order.billingAddress.address2 && <p>{order.billingAddress.address2}</p>}
+                    <p>
+                      {[order.billingAddress.city, order.billingAddress.state, order.billingAddress.zip]
+                        .filter(Boolean).join(', ')}
+                    </p>
+                    {order.billingAddress.country && <p>{order.billingAddress.country}</p>}
+                  </div>
+                </div>
+              )}
+              
+              {/* Shipping Address */}
+              {order.shippingAddress && (
+                <div>
+                  <h3 className="font-medium mb-2 text-green-600">Shipping Address</h3>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    {order.shippingAddress.address1 && <p>{order.shippingAddress.address1}</p>}
+                    {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
+                    <p>
+                      {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zip]
+                        .filter(Boolean).join(', ')}
+                    </p>
+                    {order.shippingAddress.country && <p>{order.shippingAddress.country}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="mt-4 pt-4 border-t">
           <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

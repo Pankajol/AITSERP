@@ -3,26 +3,26 @@ import SalesOrder from "@/models/SalesOrder";
 import { NextResponse } from "next/server";
 
 
-// // GET /api/grn/[id]: Get a single GRN by ID
+// GET /api/sales-order/[id]: Get a single Sales Order by ID
 export async function GET(req, { params }) {
   try {
     await dbConnect();
     const { id } = await params;  // Ensure params are awaited here.
-    const SalesOrders = await SalesOrder.findById(id);
-    if (!SalesOrders) {
-      return new Response(JSON.stringify({ message: "SalesOrders not found" }), {
+    const salesOrder = await SalesOrder.findById(id);
+    if (!salesOrder) {
+      return new Response(JSON.stringify({ message: "Sales Order not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
-    return new Response(JSON.stringify({ success: true, data: SalesOrders }), {
+    return new Response(JSON.stringify({ success: true, data: salesOrder }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error fetching SalesOrders:", error);
+    console.error("Error fetching Sales Order:", error);
     return new Response(
-      JSON.stringify({ message: "Error fetching SalesOrders", error: error.message }),
+      JSON.stringify({ message: "Error fetching Sales Order", error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -57,27 +57,36 @@ export async function PUT(req, { params }) {
     await dbConnect();
     const { id } = await params;  // Ensure params are awaited here.
     const data = await req.json();
+    
+    // Handle address data properly
+    if (data.billingAddress && typeof data.billingAddress === 'object') {
+      delete data.billingAddress._id;
+    }
+    if (data.shippingAddress && typeof data.shippingAddress === 'object') {
+      delete data.shippingAddress._id;
+    }
+    
     const updatedSalesOrder = await SalesOrder.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
     });
     if (!updatedSalesOrder) {
-      return new Response(JSON.stringify({ message: "SalesOrder not found" }), {
+      return new Response(JSON.stringify({ message: "Sales Order not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
     return new Response(
-      JSON.stringify({ message: "updatedSalesOrder updated successfully", data: updatedSalesOrder }),
+      JSON.stringify({ message: "Sales Order updated successfully", data: updatedSalesOrder }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Error updating updatedSalesOrder:", error);
+    console.error("Error updating Sales Order:", error);
     return new Response(
-      JSON.stringify({ message: "Error updating updatedSalesOrder", error: error.message }),
+      JSON.stringify({ message: "Error updating Sales Order", error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -89,22 +98,22 @@ export async function DELETE(req, { params }) {
     const { id } = await params;  // Ensure params are awaited here.
     const deletedSalesOrder = await SalesOrder.findByIdAndDelete(id);
     if (!deletedSalesOrder) {
-      return new Response(JSON.stringify({ message: "updateddeletedSalesOrder not found" }), {
+      return new Response(JSON.stringify({ message: "Sales Order not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
     return new Response(
-      JSON.stringify({ message: "updateddeletedSalesOrder deleted successfully" }),
+      JSON.stringify({ message: "Sales Order deleted successfully" }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Error deleting updateddeletedSalesOrder:", error);
+    console.error("Error deleting Sales Order:", error);
     return new Response(
-      JSON.stringify({ message: "Error deleting updateddeletedSalesOrder", error: error.message }),
+      JSON.stringify({ message: "Error deleting Sales Order", error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
