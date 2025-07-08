@@ -709,7 +709,7 @@ const handleSubmit = async () => {
       setFormData(initialOrderState); // reset form
     }
 
-    router.push("/admin/sales-order-view");
+    router.push("/users/sales-order-view");
   } catch (err) {
     const message =
       err?.response?.data?.error ||

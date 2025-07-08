@@ -29,7 +29,7 @@ body {
 }
 
 .btn-primary {
-  @apply bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md;
+  @apply bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition shadow-md;
 }
 
 .btn-secondary {

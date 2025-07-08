@@ -224,10 +224,7 @@ export default function CreateAccount() {
               onChange={handleChange}
               className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select Role</option>
-              <option value="Customer">Customer</option>
-              <option value="Agent">Agent</option>
-              <option value="Supplier">Supplier</option>
+             
             </select>
             {errors.role && (
               <p className="text-red-500 text-xs">{errors.role}</p>

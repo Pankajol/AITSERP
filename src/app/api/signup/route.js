@@ -127,3 +127,23 @@ export async function POST(req) {
     );
   }
 }
+
+// export async function GET() {
+//   await connectDb(); // Ensure the database is connected
+
+//   try {
+//     // Fetch all accounts from the database
+//     const accounts = await Account.find().populate('role', 'name'); // Populate role name
+
+//     return new Response(JSON.stringify(accounts), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching accounts:', error);
+//     return new Response(
+//       JSON.stringify({ message: 'Error fetching accounts', details: error.message }),
+//       { status: 500, headers: { 'Content-Type': 'application/json' } }
+//     );
+//   }
+// }

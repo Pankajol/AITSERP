@@ -25,21 +25,48 @@ export default function SalesOrderList() {
   const router = useRouter();
 
 
-    const fetchOrders = async () => {
-    try {
-      const res = await axios.get("/api/sales-order");
-      console.log("Fetched orders:", res.data.data);
-      //Expecting an object with a success flag and a data array.
-      if (res.data.success) {
-        setOrders(res.data);
+  //   const fetchOrders = async () => {
+  //   try {
+  //     const res = await axios.get("/api/sales-order");
+  //     console.log("Fetched orders:", res.data.data);
+  //     //Expecting an object with a success flag and a data array.
+  //     if (res.data.success) {
+  //       setOrders(res.data);
+  //     }
+  //   setOrders(res.data);
+  //   } catch (error) {
+  //     console.error("Error fetching sales orders:", error);
+  //   } finally {
+  //       setLoading(false);
+  //     }
+  // };
+
+
+
+  const fetchOrders = async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await axios.get("/api/sales-order", {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    setOrders(res.data);
-    } catch (error) {
-      console.error("Error fetching sales orders:", error);
-    } finally {
-        setLoading(false);
-      }
-  };
+    });
+
+    console.log("Fetched orders:", res.data?.data);
+
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      setOrders(res.data.data);
+    } else {
+      console.warn("Unexpected response:", res.data);
+    }
+  } catch (error) {
+    console.error("Error fetching sales orders:", error.response?.data || error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchOrders();
@@ -159,7 +186,7 @@ function Table({ orders, onDelete, onCopy }) {
     <table className="min-w-full bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
       <thead className="bg-gray-100 dark:bg-gray-700 text-sm">
         <tr>
-          {['#', 'Sales Order No.', 'Customer', 'Date', 'Status', 'Total', ''].map((h) => (
+          {['#', 'Sales Order No.', 'Customer', 'Date','Sales Stages', 'Status', 'Total', ''].map((h) => (
             <th
               key={h}
               className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-100"
@@ -181,6 +208,7 @@ function Table({ orders, onDelete, onCopy }) {
             <td className="px-4 py-3">
               {new Date(o.postingDate || o.orderDate).toLocaleDateString('en-GB')}
             </td>
+            <td className="px-4 py-3">{o.statusStages}</td>
             <td className="px-4 py-3">{o.status}</td>
             <td className="px-4 py-3">₹{o.grandTotal}</td>
             <td className="px-4 py-3">

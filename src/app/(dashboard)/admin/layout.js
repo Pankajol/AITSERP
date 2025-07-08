@@ -84,6 +84,7 @@ export default function AdminSidebar({ children }) {
           <Section title="Masters" icon={<HiUsers />} isOpen={openMenu === 'master'} onToggle={() => toggleMenu('master')}>
             <Item href="/admin/createCustomers" icon={<HiUserGroup />} label="Create Customer" close={closeSidebar} />
             <Item href="/admin/Countries" icon={<HiGlobeAlt />} label="Countries" close={closeSidebar} />
+            <Item href="/admin/company" icon={<HiHome />} label="Company" close={closeSidebar} />
             <Item href="/admin/State" icon={<HiFlag />} label="State" close={closeSidebar} />
             <Item href="/admin/City" icon={<HiOutlineOfficeBuilding />} label="City" close={closeSidebar} />
             <Item href="/admin/supplier" icon={<HiUserGroup />} label="Supplier" close={closeSidebar} />
@@ -194,6 +195,14 @@ export default function AdminSidebar({ children }) {
             <Item href="/admin/OpportunityDetailsForm" icon={<HiPuzzle />} label="Opportunity" close={closeSidebar} />
           </Section>
 
+
+             {/* user View ---------------------------------------------------- */}
+          <Section title="User" icon={<SiCivicrm />} isOpen={openMenu === 'user'} onToggle={() => toggleMenu('user')}>
+            <Item href="/admin/users" icon={<HiUserGroup />} label="user" close={closeSidebar} />
+            {/* <Item href="/admin/opportunities" icon={<HiPuzzle />} label="Opportunity" close={closeSidebar} />
+            <Item href="#" icon={<HiPuzzle />} label="Report" close={closeSidebar} /> */}
+          </Section>
+
           {/* CRM View ---------------------------------------------------- */}
           <Section title="CRM‑View" icon={<SiCivicrm />} isOpen={openMenu === 'CRM-View'} onToggle={() => toggleMenu('CRM-View')}>
             <Item href="/admin/leads-view" icon={<HiUserGroup />} label="Lead Generation" close={closeSidebar} />
@@ -233,7 +242,7 @@ export default function AdminSidebar({ children }) {
       </aside>
 
       {/* Main content ---------------------------------------------------- */}
-      <main className="flex-1 pt-14 md:pt-0 md:ml-64 p-4">{children}</main>
+      <main className="flex-1  ">{children}</main>
     </div>
   );
 }

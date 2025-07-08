@@ -45,22 +45,27 @@ const ItemSchema = new mongoose.Schema({
 });
 
 const SalesOrderSchema = new mongoose.Schema(
+
   {
+     /* ⬇⬇ MULTITENANT FIELDS */
+    companyId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
+    createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyUser' },
     quotation: { type: mongoose.Schema.Types.ObjectId, ref: 'SalesQuotation' },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
     contactPerson: { type: String },
-    salesNumber: { type: String, unique: true },
+    salesNumber: { type: String, },
     refNumber: { type: String },
     status: { type: String, default: "Open" },
+    statusStages: { type: String, default: "ETD Confirmation from plant" }, // Default status stage
     postingDate: { type: Date },
     orderDate: { type: Date },
     expectedDeliveryDate: { type: Date },
     fromQuote: { type: Boolean, default: false },
     validUntil: { type: Date },
     documentDate: { type: Date },
-    // Address fields
+    // Address fieldss
     billingAddress: {
       type: addressSchema,
       required: false
@@ -87,20 +92,22 @@ const SalesOrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-SalesOrderSchema.pre("save", async function (next) {
-  if (!this.salesNumber) {
-    try {
-      const counter = await Counter.findOneAndUpdate(
-        { id: "SalesOrder" },
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
-      );
-      this.salesNumber = `SALE-${String(counter.seq).padStart(3, "0")}`;
-    } catch (error) {
-      return next(error);
-    }
-  }
-  next();
+/* 🔐 unique per company */
+SalesOrderSchema.index({ companyId: 1, salesNumber: 1 }, { unique: true });
+
+/* per‑tenant auto‑increment */
+SalesOrderSchema.pre('save', async function (next) {
+  if (this.salesNumber) return next();
+  try {
+    const key = `SalesOrder_${this.companyId}`;
+    const counter = await Counter.findOneAndUpdate(
+      { id: key },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    this.salesNumber = `SALE-${String(counter.seq).padStart(3, '0')}`;
+    next();
+  } catch (err) { next(err); }
 });
 
 

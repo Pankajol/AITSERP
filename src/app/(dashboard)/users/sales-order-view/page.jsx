@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo,useRef } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -12,70 +12,108 @@ import {
   FaEye,
   FaEnvelope,
   FaWhatsapp,
-  FaPrint,
   FaSearch,
 } from 'react-icons/fa';
 
 /* ================================================================= */
-/*  Sales Invoice List                                               */
+/*  Sales Order List                                                 */
 /* ================================================================= */
-export default function SalesInvoiceList() {
-  const [invoices, setInvoices] = useState([]);
+export default function SalesOrderList() {
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const router = useRouter();
 
-  /* ---------- fetch invoices ---------- */
-  const fetchInvoices = async () => {
-    setLoading(true);
-    try {
-      // If you protect the route with auth, include the token
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await axios.get('/api/sales-invoice', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
 
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setInvoices(res.data.data);
-      } else if (Array.isArray(res.data)) {
-        // fallback if API directly returns an array
-        setInvoices(res.data);
-      } else {
-        console.warn('Unexpected response:', res.data);
+  //   const fetchOrders = async () => {
+  //   try {
+  //     const res = await axios.get("/api/sales-order");
+  //     console.log("Fetched orders:", res.data.data);
+  //     //Expecting an object with a success flag and a data array.
+  //     if (res.data.success) {
+  //       setOrders(res.data);
+  //     }
+  //   setOrders(res.data);
+  //   } catch (error) {
+  //     console.error("Error fetching sales orders:", error);
+  //   } finally {
+  //       setLoading(false);
+  //     }
+  // };
+
+
+
+  const fetchOrders = async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await axios.get("/api/sales-order", {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    } catch (err) {
-      console.error('Error fetching invoices:', err.response?.data || err.message);
-    } finally {
-      setLoading(false);
+    });
+
+    console.log("Fetched orders:", res.data?.data);
+
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      setOrders(res.data.data);
+    } else {
+      console.warn("Unexpected response:", res.data);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching sales orders:", error.response?.data || error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
-    fetchInvoices();
+    fetchOrders();
   }, []);
 
-  /* ---------- filtered list ---------- */
-  const displayInvoices = useMemo(() => {
-    if (!search.trim()) return invoices;
-    const q = search.toLowerCase();
-    return invoices.filter((inv) => (inv.customerName || '').toLowerCase().includes(q));
-  }, [invoices, search]);
+  /* ---------- fetch orders ---------- */
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //         const res = await axios.get("/api/sales-order");
+  //         if (res.data.success) {
+  //       setOrders(res.data);
+  //     }
+  //     } catch (err) {
+  //       console.error('Error fetching orders:', err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   })();
+  // }, []);
 
-  /* ---------- actions ---------- */
+  /* ---------- filtered list ---------- */
+  const displayOrders = useMemo(() => {
+    if (!search.trim()) return orders;
+    const q = search.toLowerCase();
+    return orders.filter((o) => (o.customerName || '').toLowerCase().includes(q));
+  }, [orders, search]);
+
+  /* ---------- row actions ---------- */
   const handleDelete = async (id) => {
-    if (!confirm('Delete this invoice?')) return;
+    if (!confirm('Delete this order?')) return;
     try {
-      await axios.delete(`/api/sales-invoice/${id}`);
-      setInvoices((prev) => prev.filter((inv) => inv._id !== id));
+      await axios.delete(`/api/sales-order/${id}`);
+      setOrders((prev) => prev.filter((o) => o._id !== id));
     } catch {
       alert('Failed to delete');
     }
   };
 
-  const handleCopyTo = (invoice, dest) => {
-    if (dest === 'Credit') {
-      sessionStorage.setItem('CreditData', JSON.stringify(invoice));
-      router.push('/admin/credit-memo');
+  const handleCopyTo = (order, dest) => {
+    const data = { ...order, salesOrderId: order._id, sourceModel: 'SalesOrder' };
+    if (dest === 'Delivery') {
+      sessionStorage.setItem('deliveryData', JSON.stringify(data));
+      router.push('/admin/delivery-view/new');
+    } else {
+      sessionStorage.setItem('SalesInvoiceData', JSON.stringify(data));
+      router.push('/admin/sales-invoice-view/new');
     }
   };
 
@@ -85,7 +123,7 @@ export default function SalesInvoiceList() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <h1 className="text-3xl md:text-4xl font-bold mb-6 text-center dark:text-white">
-        Sales Invoices
+        Sales Orders
       </h1>
 
       {/* toolbar */}
@@ -100,9 +138,9 @@ export default function SalesInvoiceList() {
           />
         </div>
 
-        <Link href="/admin/sales-invoice-view/new" className="sm:w-auto">
+        <Link href="sales-order-view/new" className="sm:w-auto">
           <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 shadow">
-            <FaEdit /> New Invoice
+            <FaEdit /> New Order
           </button>
         </Link>
       </div>
@@ -114,22 +152,24 @@ export default function SalesInvoiceList() {
         <>
           {/* desktop */}
           <div className="hidden md:block overflow-x-auto">
-            <Table invoices={displayInvoices} onDelete={handleDelete} onCopy={handleCopyTo} />
+            <Table orders={displayOrders} onDelete={handleDelete} onCopy={handleCopyTo} />
           </div>
 
           {/* mobile cards */}
           <div className="md:hidden space-y-4">
-            {displayInvoices.map((inv, i) => (
+            {displayOrders.map((o, i) => (
               <Card
-                key={inv._id}
-                invoice={inv}
+                key={o._id}
+                order={o}
                 idx={i}
                 onDelete={handleDelete}
                 onCopy={handleCopyTo}
               />
             ))}
-            {!displayInvoices.length && (
-              <p className="text-center text-gray-500 dark:text-gray-400">No matching invoices</p>
+            {!displayOrders.length && (
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                No matching orders
+              </p>
             )}
           </div>
         </>
@@ -141,36 +181,45 @@ export default function SalesInvoiceList() {
 /* ================================================================= */
 /*  Desktop Table                                                    */
 /* ================================================================= */
-function Table({ invoices, onDelete, onCopy }) {
+function Table({ orders, onDelete, onCopy }) {
   return (
     <table className="min-w-full bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
       <thead className="bg-gray-100 dark:bg-gray-700 text-sm">
         <tr>
-          {['#', 'Invoice No.', 'Customer', 'Date', 'Status', 'Total', ''].map((h) => (
-            <th key={h} className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-100">
+          {['#', 'Sales Order No.', 'Customer', 'Date','Sales Stages', 'Status', 'Total', ''].map((h) => (
+            <th
+              key={h}
+              className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-100"
+            >
               {h}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {invoices.map((inv, i) => (
-          <tr key={inv._id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+        {orders.map((o, i) => (
+          <tr
+            key={o._id}
+            className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
             <td className="px-4 py-3">{i + 1}</td>
-            <td className="px-4 py-3">{inv.invoiceNumber || inv.refNumber}</td>
-            <td className="px-4 py-3">{inv.customerName}</td>
-            <td className="px-4 py-3">{new Date(inv.orderDate || inv.postingDate).toLocaleDateString('en-GB')}</td>
-            <td className="px-4 py-3">{inv.status}</td>
-            <td className="px-4 py-3">₹{inv.grandTotal}</td>
+            <td className="px-4 py-3">{o.salesNumber || o.refNumber}</td>
+            <td className="px-4 py-3">{o.customerName}</td>
             <td className="px-4 py-3">
-              <RowMenu invoice={inv} onDelete={onDelete} onCopy={onCopy} />
+              {new Date(o.postingDate || o.orderDate).toLocaleDateString('en-GB')}
+            </td>
+            <td className="px-4 py-3">{o.statusStages}</td>
+            <td className="px-4 py-3">{o.status}</td>
+            <td className="px-4 py-3">₹{o.grandTotal}</td>
+            <td className="px-4 py-3">
+              <RowMenu order={o} onDelete={onDelete} onCopy={onCopy} />
             </td>
           </tr>
         ))}
-        {!invoices.length && (
+        {!orders.length && (
           <tr>
-            <td colSpan={6} className="text-center py-6 text-gray-500 dark:text-gray-400">
-              No invoices found.
+            <td colSpan={7} className="text-center py-6 text-gray-500 dark:text-gray-400">
+              No orders found.
             </td>
           </tr>
         )}
@@ -182,19 +231,23 @@ function Table({ invoices, onDelete, onCopy }) {
 /* ================================================================= */
 /*  Mobile Card                                                      */
 /* ================================================================= */
-function Card({ invoice, idx, onDelete, onCopy }) {
+function Card({ order, idx, onDelete, onCopy }) {
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
       <div className="flex justify-between">
         <div className="font-semibold text-gray-700 dark:text-gray-100">
-          #{idx + 1} • {invoice.invoiceNumber || invoice.refNumber}
+          #{idx + 1} • {order.salesNumber || order.refNumber}
         </div>
-        <RowMenu invoice={invoice} onDelete={onDelete} onCopy={onCopy} isMobile />
+        <RowMenu order={order} onDelete={onDelete} onCopy={onCopy} isMobile />
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Customer: {invoice.customerName}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-300">Date: {new Date(invoice.orderDate || invoice.postingDate).toLocaleDateString('en-GB')}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-300">Status: {invoice.status}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-300">Total: ₹{invoice.grandTotal}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+        Customer: {order.customerName}
+      </p>
+      <p className="text-sm text-gray-500 dark:text-gray-300">
+        Date: {new Date(order.postingDate || order.orderDate).toLocaleDateString('en-GB')}
+      </p>
+      <p className="text-sm text-gray-500 dark:text-gray-300">Status: {order.status}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-300">Total: ₹{order.grandTotal}</p>
     </div>
   );
 }
@@ -202,7 +255,7 @@ function Card({ invoice, idx, onDelete, onCopy }) {
 /* ================================================================= */
 /*  Row Action Menu (dropdown)                                       */
 /* ================================================================= */
-function RowMenu({ invoice, onDelete, onCopy }) {
+function RowMenu({ order, onDelete, onCopy }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -211,16 +264,13 @@ function RowMenu({ invoice, onDelete, onCopy }) {
   useEffect(() => {
     if (open && btnRef.current) {
       const { bottom, right } = btnRef.current.getBoundingClientRect();
-      setCoords({ top: bottom + 8, left: right - 192 }); // menu width
+      setCoords({ top: bottom + 8, left: right - 192 /* menu width */ });
     }
   }, [open]);
 
   const MenuItem = ({ icon, label, onClick, color = '' }) => (
     <button
-      onClick={() => {
-        onClick();
-        setOpen(false);
-      }}
+      onClick={() => { onClick(); setOpen(false); }}
       className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
     >
       <span className={`${color}`}>{icon}</span> {label}
@@ -242,41 +292,26 @@ function RowMenu({ invoice, onDelete, onCopy }) {
           style={{ top: coords.top, left: coords.left }}
           className="fixed z-50 w-48 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg"
         >
-          <MenuItem
-            icon={<FaEye />}
-            label="View"
-            onClick={() => (window.location.href = `/admin/sales-invoice-view/${invoice._id}`)}
+          <MenuItem icon={<FaEye />} label="View"
+            onClick={() => (window.location.href = `/admin/sales-order-view/view/${order._id}`)}
           />
-          <MenuItem
-            icon={<FaEdit />}
-            label="Edit"
-            onClick={() => (window.location.href = `/admin/sales-invoice-view/new?editId=${invoice._id}`)}
+          <MenuItem icon={<FaEdit />} label="Edit"
+            onClick={() => (window.location.href = `/admin/sales-order-view/new?editId=${order._id}`)}
           />
-          <MenuItem
-            icon={<FaCopy />}
-            label="Copy → Credit"
-            onClick={() => onCopy(invoice, 'Credit')}
+          <MenuItem icon={<FaCopy />} label="Copy → Delivery"
+            onClick={() => onCopy(order, 'Delivery')}
           />
-          <MenuItem
-            icon={<FaEnvelope />}
-            label="Email"
-            onClick={() => (window.location.href = `/admin/email/${invoice._id}`)}
+          <MenuItem icon={<FaCopy />} label="Copy → Invoice"
+            onClick={() => onCopy(order, 'Invoice')}
           />
-          <MenuItem
-            icon={<FaWhatsapp />}
-            label="WhatsApp"
-            onClick={() => (window.location.href = `/admin/whatsapp/${invoice._id}`)}
+          <MenuItem icon={<FaEnvelope />} label="Email"
+            onClick={() => (window.location.href = `/admin/sales-order-email/${order._id}`)}
           />
-          <MenuItem
-            icon={<FaPrint />}
-            label="Print"
-            onClick={() => (window.location.href = `/admin/sales-invoice-print/${invoice._id}`)}
+          <MenuItem icon={<FaWhatsapp />} label="WhatsApp"
+            onClick={() => (window.location.href = `/admin/sales-order-whatsapp/${order._id}`)}
           />
-          <MenuItem
-            icon={<FaTrash />}
-            label="Delete"
-            color="text-red-600"
-            onClick={() => onDelete(invoice._id)}
+          <MenuItem icon={<FaTrash />} label="Delete" color="text-red-600"
+            onClick={() => onDelete(order._id)}
           />
         </div>
       )}
@@ -286,70 +321,79 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 
 
 
+
 // "use client";
 
 // import { useState, useEffect } from "react";
 // import Link from "next/link";
 // import axios from "axios";
 // import { useRouter } from "next/navigation";
-// import {
-//   FaEdit,
-//   FaTrash,
-//   FaCopy,
-//   FaEye,
-//   FaEnvelope,
-//   FaWhatsapp,
-//   FaPrint,
-// } from "react-icons/fa";
+// import { FaEdit, FaTrash, FaCopy, FaEye, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 
-// export default function PurchaseOrderList() {
+// export default function SalesOrderList() {
 //   const [orders, setOrders] = useState([]);
 //   const router = useRouter();
 
-//   const fetchOrders = async () => {
-//     try {
-//       const res = await axios.get("/api/sales-invoice");
-//       // console.log("Fetched orders:", res.data.data);
-//       // Expecting an object with a success flag and a data array.
-//       //   if (res.data.success) {
-//       //     setOrders(res.data);
-//       //   }
-//       setOrders(res.data.data);
-//     } catch (error) {
-//       console.error("Error fetching purchase orders:", error);
-//     }
-//   };
 
-//   useEffect(() => {
-//     fetchOrders();
-//   }, []);
+
+
+
+
+
+  // const fetchOrders = async () => {
+  //   try {
+  //     const res = await axios.get("/api/sales-order");
+  //     console.log("Fetched orders:", res.data.data);
+  //     //Expecting an object with a success flag and a data array.
+  //     if (res.data.success) {
+  //       setOrders(res.data);
+  //     }
+  //   setOrders(res.data);
+  //   } catch (error) {
+  //     console.error("Error fetching sales orders:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchOrders();
+  // }, []);
 
 //   const handleDelete = async (id) => {
 //     if (!confirm("Are you sure you want to delete this order?")) return;
 //     try {
-//       const res = await axios.delete(`/api/sales-invoice/${id}`);
+//       const res = await axios.delete(`/api/sales-order/${id}`);
 //       if (res.data.success) {
 //         alert("Deleted successfully");
 //         fetchOrders();
 //       }
 //     } catch (error) {
-//       console.error("Error deleting purchase order:", error);
+//       console.error("Error deleting sales order:", error);
 //       alert("Failed to delete order");
 //     }
 //   };
 
 //   const handleCopyTo = (order, destination) => {
-//     if (destination === "Credit") {
-//       sessionStorage.setItem("CreditData", JSON.stringify(order));
-//       router.push("/admin/credit-memo");
-//     } else if (destination === "Invoice") {
-//       sessionStorage.setItem("purchaseInvoiceData", JSON.stringify(order));
-//       router.push("/admin/sales-invoice");
-//     }
+//     // sessionStorage.setItem("salesOrderData", JSON.stringify(order));
+//     //  router.push("/admin/sales-invoice");
+
+//     if (destination === "Delivery") {
+//       const orderWithId = { ...order, salesOrderId: order._id,sourceModel: "SalesOrder" };
+//       sessionStorage.setItem("deliveryData", JSON.stringify(order));
+//       router.push("/admin/delivery-view/new");
+//     }else if (destination === "Invoice") {
+//       const invoiceWithId = {...order,salesOrderId:order._id, sourceModel: "SalesOrder" }
+//       sessionStorage.setItem("SalesInvoiceData", JSON.stringify(invoiceWithId));
+//       router.push("/admin/sales-invoice-view/new");
+//     } 
 //     // else if (destination === "Debit-Note") {
 //     //   sessionStorage.setItem("debitNoteData", JSON.stringify(order));
 //     //   router.push("/admin/debit-note");
 //     // }
+
+
+
+
+
 //   };
 
 //   const CopyToDropdown = ({ handleCopyTo, order }) => {
@@ -373,17 +417,18 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 //           <div className="absolute right-0 mt-2 w-40 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg z-10">
 //             <div className="py-1">
 //               <button
-//                 onClick={() => onSelect("Credit")}
+//                 onClick={() => onSelect("Delivery")}
 //                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
 //               >
-//                 Credit
+//                 Delivery
 //               </button>
-//               {/* <button
+//               <button
 //                 onClick={() => onSelect("Invoice")}
 //                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
 //               >
 //                 Invoice
-//               </button> */}
+//               </button>
+            
 //             </div>
 //           </div>
 //         )}
@@ -393,12 +438,12 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 
 //   return (
 //     <div className="container mx-auto p-6">
-//       <h1 className="text-4xl font-bold mb-6 text-center">Sales Invoice</h1>
+//       <h1 className="text-4xl font-bold mb-6 text-center">Sales Orders</h1>
 //       <div className="flex justify-end mb-4">
-//         <Link href="/admin/sales-invoice-view/new">
+//         <Link href="/admin/sales-order-view/new">
 //           <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200">
 //             <FaEdit className="mr-2" />
-//             Create New Invoice
+//             Create New Order
 //           </button>
 //         </Link>
 //       </div>
@@ -406,9 +451,9 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 //         <table className="min-w-full bg-white shadow-md rounded border border-gray-200">
 //           <thead className="bg-gray-100">
 //             <tr>
-//               <th className="py-3 px-4 border-b">Customer Code</th>
+//               <th className="py-3 px-4 border-b">Ref Number</th>
 //               <th className="py-3 px-4 border-b">Customer Name</th>
-//               <th className="py-3 px-4 border-b">Date </th>
+//               <th className="py-3 px-4 border-b">Order Date</th>
 //               <th className="py-3 px-4 border-b">Status</th>
 //               <th className="py-3 px-4 border-b">Grand Total</th>
 //               <th className="py-3 px-4 border-b">Actions</th>
@@ -416,31 +461,19 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 //           </thead>
 //           <tbody>
 //             {orders.map((order) => (
-//               <tr
-//                 key={order._id}
-//                 className="hover:bg-gray-50 transition-colors"
-//               >
+//               <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+//                 <td className="py-3 px-4 border-b text-center">{order.refNumber}</td>
+//                 <td className="py-3 px-4 border-b text-center">{order.customerName}</td>
 //                 <td className="py-3 px-4 border-b text-center">
-//                   {order.customerCode}
-//                 </td>
-//                 <td className="py-3 px-4 border-b text-center">
-//                   {order.customerName}
-//                 </td>
-//                 <td className="py-3 px-4 border-b text-center">
-//                   {order.orderDate
-//                     ? new Date(order.orderDate).toLocaleDateString()
+//                   {order.postingDate ?  new Date(order.postingDate).toLocaleDateString("en-GB")
 //                     : ""}
 //                 </td>
-//                 <td className="py-3 px-4 border-b text-center">
-//                   {order.status}
-//                 </td>
-//                 <td className="py-3 px-4 border-b text-center">
-//                   {order.grandTotal}
-//                 </td>
+//                 <td className="py-3 px-4 border-b text-center">{order.status}</td>
+//                 <td className="py-3 px-4 border-b text-center">{order.grandTotal}</td>
 //                 <td className="py-3 px-4 border-b">
 //                   <div className="flex justify-center space-x-2">
 //                     {/* View Button */}
-//                     <Link href={`/admin/sales-invoice-view/${order._id}`}>
+//                     <Link href={`/admin/sales-order-view/${order._id}`}>
 //                       <button
 //                         className="flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition duration-200"
 //                         title="View Details"
@@ -449,9 +482,7 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 //                       </button>
 //                     </Link>
 //                     {/* Edit Button */}
-//                     <Link
-//                       href={`/admin/sales-invoice-view/new?editId=${order._id}`}
-//                     >
+//                   <Link href={`/admin/sales-order-view/new?editId=${order._id}`}>
 //                       <button
 //                         className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
 //                         title="Edit"
@@ -469,33 +500,22 @@ function RowMenu({ invoice, onDelete, onCopy }) {
 //                     </button>
 //                     {/* Copy To Dropdown */}
 //                     <CopyToDropdown handleCopyTo={handleCopyTo} order={order} />
-//                     {/* Email Button */}
-//                     <Link href={`/admin/email/${order._id}`}>
+//                     {/* Email Button */}  
+//                     <Link href={`/admin/sales-order-email/${order._id}`}>
 //                       <button
 //                         className="flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-500 transition duration-200"
-//                         title="Email"
+//                         title="Email Order"
 //                       >
 //                         <FaEnvelope />
 //                       </button>
 //                     </Link>
-//                     {/* WhatsApp Button */}
-//                     <Link href={`/admin/whatsapp/${order._id}`}>
+//                     {/* WhatsApp Button */} 
+//                     <Link href={`/admin/sales-order-whatsapp/${order._id}`}>
 //                       <button
 //                         className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 transition duration-200"
-//                         title="WhatsApp"
+//                         title="WhatsApp Order"
 //                       >
 //                         <FaWhatsapp />
-//                       </button>
-//                     </Link>
-//                     <Link
-//                       href={`/admin/sales-invoice-print/${order._id}`}
-                     
-//                     >
-//                       <button
-//                         className="flex items-center px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 transition duration-200"
-//                         title="Print"
-//                       >
-//                         <FaPrint />
 //                       </button>
 //                     </Link>
 //                   </div>
