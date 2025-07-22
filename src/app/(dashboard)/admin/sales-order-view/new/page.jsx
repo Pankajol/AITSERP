@@ -405,8 +405,6 @@
 
 
 
-
-
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
@@ -417,6 +415,7 @@ import CustomerSearch from "@/components/CustomerSearch";
 import CustomerAddressSelector from "@/components/CustomerAddressSelector";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { jwtDecode } from "jwt-decode";
 
 // Initial state with full set of fields
 const initialOrderState = {
@@ -489,19 +488,43 @@ function SalesOrderForm() {
   const router = useRouter();
   const params = useSearchParams();
   const editId = params.get("editId");
-
+   const [attachments, setAttachments] = useState([]);
   const [formData, setFormData] = useState(initialOrderState);
   const [loading, setLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-
+  const [existingFiles, setExistingFiles] = useState([]);
+  const [removedFiles, setRemovedFiles] = useState([]);
   const [isNewCustomer, setIsNewCustomer] = useState(false);
-
+  const base = "w-full p-2 border rounded";
   /* ---------- handlers ---------- */
 
  
+
+  // ---- Auth parsing ----
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
+  //  
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const d = jwtDecode(token); // ✅ correct method
+    const roles = Array.isArray(d?.roles) ? d.roles : [];
+    const roleStr = d?.role ?? d?.userRole ?? null;
+    const isCompany = d?.type === "company" && !!d?.companyName;
+    const isAdminRole = roleStr === "Sales Manager" || roles.includes("admin") || roles.includes("sales manager");
+    setIsAdmin(isAdminRole || isCompany);
+  } catch (e) {
+    console.error("JWT decode error", e);
+  }
+}, []);
+
+  const isReadOnly = !!editId && !isAdmin; // locked when editing & not admin/company
+
 
   // called when CustomerSearch reports “no match”
   const onSearchNotFound = searchText => {
@@ -646,84 +669,79 @@ function SalesOrderForm() {
     });
   };
 
-// const handleSubmit = async () => {
-//   if (!formData.customerCode || !formData.customerName) {
-//     return alert("Select a customer");
-//   }
 
-//   setSubmitting(true);
-//   setError(null); // clear previous error
-
-//   try {
-//     if (editId) {
-//       await axios.put(`/api/sales-order/${editId}`, formData);
-//       toast.success("Sales Order updated successfully");
-//     } else {
-//       const res = await axios.post("/api/sales-order", formData);
-//       toast.success("Sales Order created successfully");
-
-//       // Optional: reset only after successful post
-//       setFormData(initialOrderState);
-//     }
-
-//     router.push("/admin/sales-order-view");
-//   } catch (err) {
-//     const message =
-//       err?.response?.data?.error || err.message || "Unknown error";
-
-//     setError(message); // set state if you display it on screen
-//     toast.error(`❌ ${message}`);
-//     console.error("Error saving sales order:", err); // full trace
-//   } finally {
-//     setSubmitting(false);
-//   }
-// };
 
 const handleSubmit = async () => {
   if (!formData.customerCode || !formData.customerName) {
-    toast.error("❌ Please select a customer");
+    toast.error("Select a customer");
     return;
   }
 
   setSubmitting(true);
-  setError(null);
-
   try {
     const token = localStorage.getItem("token");
+    if (!token) throw new Error("Not authenticated");
 
-    if (!token) {
-      throw new Error("User is not authenticated");
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // 🛠 Fix: wrap string addresses into object
+    if (typeof formData.shippingAddress === "string") {
+      formData.shippingAddress = { address1: formData.shippingAddress };
+    }
+    if (typeof formData.billingAddress === "string") {
+      formData.billingAddress = { address1: formData.billingAddress };
     }
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+    // 📦 Utility: builds FormData
+    const buildFormData = (data, newFiles = [], removed = []) => {
+      const fd = new FormData();
+      fd.append("orderData", JSON.stringify(data));
+      newFiles.forEach((f) => fd.append("newFiles", f));
+      if (removed.length > 0) {
+        fd.append("removedFiles", JSON.stringify(removed));
+      }
+      return fd;
     };
 
+    // ───────── 🛠 EDIT MODE ─────────
     if (editId) {
-      await axios.put(`/api/sales-order/${editId}`, formData, { headers });
-      toast.success("✅ Sales Order updated successfully");
+      if (!isAdmin) {
+        // non-admins → only update stage
+        await axios.put(
+          `/api/sales-order/${editId}`,
+          { status: formData.status, statusStages: formData.statusStages },
+          { headers }
+        );
+        toast.success("Stage updated");
+      } else {
+        const fileChanges = attachments.length > 0 || removedFiles.length > 0;
+        if (fileChanges) {
+          const body = buildFormData(formData, attachments, removedFiles);
+          await axios.put(`/api/sales-order/${editId}`, body, { headers });
+        } else {
+          await axios.put(`/api/sales-order/${editId}`, formData, { headers });
+        }
+        toast.success("Updated successfully");
+      }
+
+    // ───────── 🆕 CREATE MODE ─────────
     } else {
-      const res = await axios.post("/api/sales-order", formData, { headers });
-      toast.success("✅ Sales Order created successfully");
-      setFormData(initialOrderState); // reset form
+      const body = buildFormData(formData, attachments);
+      await axios.post("/api/sales-order", body, { headers });
+      toast.success("Created successfully");
+      setFormData(initialOrderState);
+      setAttachments([]);
     }
 
     router.push("/admin/sales-order-view");
-  } catch (err) {
-    const message =
-      err?.response?.data?.error ||
-      err?.response?.data?.message ||
-      err.message ||
-      "Unknown error";
-
-    setError(message);
-    toast.error(`❌ ${message}`);
-    console.error("Error saving sales order:", err);
+  } catch (e) {
+    toast.error(e?.response?.data?.message || e.message);
   } finally {
     setSubmitting(false);
   }
 };
+
+
 
 
   if (loading) return <div>Loading...</div>;
@@ -764,7 +782,7 @@ const handleSubmit = async () => {
            <div>
       <label className="mb-2 block font-medium">Customer Name</label>
 
-      {/* CASE 1 – editing an existing record or copying -> always free text */}
+
       {editId || isCopied ? (
         <input
           type="text"
@@ -774,7 +792,7 @@ const handleSubmit = async () => {
           className="w-full rounded border p-2"
         />
       ) : (
-        /* CASE 2 – brand‑new record */
+    
         <>
           {isNewCustomer ? (
             <>
@@ -796,10 +814,9 @@ const handleSubmit = async () => {
             </>
           ) : (
             <>
-              <CustomerSearch
-                onSelectCustomer={onCustomer}
-                onNotFound={onSearchNotFound} // 👈 add this prop inside CustomerSearch
-              />
+            
+
+               <CustomerSearch onSelectCustomer={onCustomer} />
               <button
                 type="button"
                 onClick={() => setIsNewCustomer(true)}
@@ -851,23 +868,32 @@ const handleSubmit = async () => {
            <option>Open</option> <option>Pending</option><option>Closed</option><option>Cancelled</option>
           </select>
         </div>
-          <div>
+          {/* <div>
           <label className="font-medium">Sales Stages</label>
           <select name="statusStages" value={formData.statusStages} onChange={handleChange} className="w-full p-2 border rounded">
            <option>ETD Confirmation from plant</option> <option>ETD notification for SC-cremika</option><option>SC to concerned sales & customer</option><option>Material in QC-OK/NOK</option>
            <option>Dispatch with qty</option> <option>Delivered to customer</option>
           </select>
-        </div>
+        </div> */}
       </div>
 
       {/* Items */}
-      <ItemSection
+      {/* <ItemSection
         items={Array.isArray(formData.items) ? formData.items : []}
         onItemChange={handleItemChange}
         onAddItem={addItemRow}
         onRemoveItem={removeItemRow}
         computeItemValues={computeItemValues}
-      />
+      /> */}
+
+                     <ItemSection
+          items={formData.items}
+          onItemChange={handleItemChange}
+          onAddItem={addItemRow}
+          onRemoveItem={removeItemRow}
+          computeItemValues={computeItemValues}
+        />
+
 
       {/* Totals */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
@@ -884,6 +910,108 @@ const handleSubmit = async () => {
         <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows={3} className="w-full p-2 border rounded"></textarea>
       </div>
 
+      <div className="mt-6">
+  <label className="font-medium block mb-1">Attachments</label>
+
+  {/* Existing uploaded files */}
+{existingFiles.length > 0 && (
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+    {existingFiles.map((file, idx) => {
+      const url = typeof file === "string"
+        ? file
+        : file?.fileUrl || file?.url || file?.path || file?.location || "";
+
+      const type = file?.fileType || "";
+      const name = file?.fileName || url?.split("/").pop() || `File-${idx}`;
+      if (!url) return null;
+
+      const isPDF = type === "application/pdf" || url.toLowerCase().endsWith(".pdf");
+
+      return (
+        <div key={idx} className="relative border rounded p-2 text-center">
+          {isPDF ? (
+            <object data={url} type="application/pdf" className="h-24 w-full rounded" />
+          ) : (
+            <img src={url} alt={name} className="h-24 w-full object-cover rounded" />
+          )}
+
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-blue-600 text-xs mt-1 truncate"
+          >
+            {name}
+          </a>
+
+          {!isReadOnly && (
+            <button
+              onClick={() => {
+                setExistingFiles((prev) => prev.filter((_, i) => i !== idx));
+                // Optional: keep track of deleted files if needed for API call
+                setRemovedFiles((prev) => [...prev, file]);
+              }}
+              className="absolute top-1 right-1 bg-red-600 text-white rounded px-1 text-xs"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      );
+    })}
+  </div>
+)}
+
+  {/* New Uploads */}
+<input
+  type="file"
+  multiple
+  accept="image/*,application/pdf"
+  disabled={isReadOnly}
+  onChange={(e) => {
+    if (isReadOnly) return;
+    const files = Array.from(e.target.files);
+    setAttachments((prev) => {
+      const m = new Map(prev.map((f) => [f.name + f.size, f]));
+      files.forEach((f) => m.set(f.name + f.size, f));
+      return [...m.values()];
+    });
+    e.target.value = "";
+  }}
+  className={isReadOnly ? `${ro} cursor-not-allowed` : base}
+/>
+
+
+  {/* Previews of new uploads */}
+  {!isReadOnly && attachments.length > 0 && (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-3">
+      {attachments.map((file, idx) => {
+        const url = URL.createObjectURL(file);
+        const isPDF = file.type === "application/pdf";
+        const isImage = file.type.startsWith("image/");
+
+        return (
+          <div key={idx} className="relative border rounded p-2 text-center">
+            {isImage ? (
+              <img src={url} alt={file.name} className="h-24 w-full object-cover rounded" />
+            ) : isPDF ? (
+              <object data={url} type="application/pdf" className="h-24 w-full rounded" />
+            ) : (
+              <p className="truncate text-xs">{file.name}</p>
+            )}
+            <button
+              onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+              className="absolute top-1 right-1 bg-red-600 text-white rounded px-1 text-xs"
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
+
       <div className="mt-6 flex gap-4">
         <button onClick={handleSubmit} disabled={submitting} className={`px-4 py-2 rounded text-white ${submitting ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-500"}`}>
           {submitting ? "Saving..." : editId ? "Update Order" : "Create Order"}
@@ -895,6 +1023,7 @@ const handleSubmit = async () => {
     </div>
   );
 }
+
 
 
 
