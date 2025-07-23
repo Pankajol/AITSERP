@@ -463,7 +463,7 @@ function CreditNoteFormWrapper() {
 
   const handleSubmit = async () => {
     try {
-      if (formData._id) {
+      if (editId) {
         await axios.put(`/api/credit-note/${formData._id}`, formData, {
           headers: { "Content-Type": "application/json" },
         });
@@ -475,7 +475,7 @@ function CreditNoteFormWrapper() {
         toast.success("Credit Note added successfully");
         setFormData(initialCreditNoteState);
       }
-      router.push("/admin/credit-note");
+      router.push("/admin/credit-memo-veiw");
     } catch (error) {
       console.error("Error saving credit note:", error);
       toast.error(formData._id ? "Failed to update credit note" : "Error adding credit note");
@@ -720,7 +720,7 @@ function CreditNoteFormWrapper() {
           onClick={handleSubmit}
           className="px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-300"
         >
-          {formData._id ? "Update" : "Add"}
+          {editId ? "Update" : "Add"}
         </button>
         <button
           onClick={() => {
