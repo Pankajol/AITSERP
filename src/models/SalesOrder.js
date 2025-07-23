@@ -48,8 +48,7 @@ const SalesOrderSchema = new mongoose.Schema(
 
   {
      /* ⬇⬇ MULTITENANT FIELDS */
-    companyId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
-    createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyUser' },
+ 
     quotation: { type: mongoose.Schema.Types.ObjectId, ref: 'SalesQuotation' },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     customerCode: { type: String, required: true },
