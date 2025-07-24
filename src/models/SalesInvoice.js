@@ -50,7 +50,7 @@ const SalesInvoiceItemSchema = new Schema(
 // Schema for Sales Invoice.
 const SalesInvoiceSchema = new Schema(
   {
-    invoiceNumber: { type: String, unique: true },
+    // invoiceNumber: { type: String, unique: true },
     customer: { type: Schema.Types.ObjectId, ref: "Customer" },
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
