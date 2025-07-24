@@ -50,7 +50,7 @@ const SalesInvoiceItemSchema = new Schema(
 // Schema for Sales Invoice.
 const SalesInvoiceSchema = new Schema(
   {
-    // invoiceNumber: { type: String, unique: true },
+    invoiceNumber: { type: String, unique: true },
     customer: { type: Schema.Types.ObjectId, ref: "Customer" },
     customerCode: { type: String, required: true },
     customerName: { type: String, required: true },
@@ -86,21 +86,21 @@ const SalesInvoiceSchema = new Schema(
 );
 
 // Pre-save hook to auto-generate a unique invoice reference number.
-// SalesInvoiceSchema.pre("save", async function (next) {
-//   if (!this.invoiceNumber) {
-//     try {
-//       const counter = await Counter.findOneAndUpdate(
-//         { id: "salesInvoice" },
-//         { $inc: { seq: 1 } },
-//         { new: true, upsert: true }
-//       );
-//       this.invoiceNumber = `SALE-${String(counter.seq).padStart(3, "0")}`;
-//     } catch (error) {
-//       return next(error);
-//     }
-//   }
-//   next();
-// });
+SalesInvoiceSchema.pre("save", async function (next) {
+  if (!this.invoiceNumber) {
+    try {
+      const counter = await Counter.findOneAndUpdate(
+        { id: "salesInvoice" },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.invoiceNumber = `SALE-${String(counter.seq).padStart(3, "0")}`;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
 
 export default mongoose.models.SalesInvoice || mongoose.model("SalesInvoice", SalesInvoiceSchema);
 
