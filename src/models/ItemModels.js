@@ -19,7 +19,7 @@ const ItemSchema = new mongoose.Schema(
     leadTime: { type: Number },
     itemType: { type: String },
     uom: { type: String },
-    managedBy: { type: String, enum: ["batch", "serial"], default: "batch" },
+    managedBy: { type: String },
     managedValue: { type: String },
     batchNumber: { type: String },
     expiryDate: { type: Date },
