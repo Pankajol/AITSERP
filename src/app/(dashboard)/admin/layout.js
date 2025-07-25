@@ -105,47 +105,47 @@ export default function AdminSidebar({ children }) {
             <Item href="/admin/bank-head-details-view" icon={<HiCurrencyDollar />} label="General Ledger View" close={closeSidebar} />
           </Section>
 
-          {/* Transactions ------------------------------------------------ */}
-          //  <div>
-          //   <MenuButton
-          //     isOpen={openMenu === 'transactions'}
-          //     onToggle={() => toggleMenu('transactions')}
-          //     icon={<HiCurrencyDollar />}
-          //     label="Transactions"
-          //   />
-          //   {openMenu === 'transactions' && (
-          //     <div className="ml-6 mt-2 space-y-1">
-          //       {/* Sales Submenu */}
-          //       <Submenu
-          //         isOpen={openSubmenu === 'sales'}
-          //         onToggle={() => toggleSubmenu('sales')}
-          //         icon={<HiShoppingCart />}
-          //         label="Sales"
-          //       >
-          //         <Item href="/admin/sales-quotation" icon={<HiChevronDown />} label="Quotation" close={closeSidebar} />
-          //         <Item href="/admin/sales-order" icon={<HiChevronRight />} label="Order" close={closeSidebar} />
-          //         <Item href="/admin/delivery" icon={<HiOutlineCube />} label="Delivery" close={closeSidebar} />
-          //         <Item href="/admin/sales-invoice" icon={<HiOutlineCreditCard />} label="Invoice" close={closeSidebar} />
-          //         <Item href="/admin/credit-memo" icon={<HiReceiptTax />} label="Credit Memo" close={closeSidebar} />
-          //       </Submenu>
+          {/* Transactions ------------------------------------------------ 
+           <div>
+            <MenuButton
+              isOpen={openMenu === 'transactions'}
+              onToggle={() => toggleMenu('transactions')}
+              icon={<HiCurrencyDollar />}
+              label="Transactions"
+            />
+            {openMenu === 'transactions' && (
+              <div className="ml-6 mt-2 space-y-1">
+             
+                <Submenu
+                  isOpen={openSubmenu === 'sales'}
+                  onToggle={() => toggleSubmenu('sales')}
+                  icon={<HiShoppingCart />}
+                  label="Sales"
+                >
+                  <Item href="/admin/sales-quotation" icon={<HiChevronDown />} label="Quotation" close={closeSidebar} />
+                  <Item href="/admin/sales-order" icon={<HiChevronRight />} label="Order" close={closeSidebar} />
+                  <Item href="/admin/delivery" icon={<HiOutlineCube />} label="Delivery" close={closeSidebar} />
+                  <Item href="/admin/sales-invoice" icon={<HiOutlineCreditCard />} label="Invoice" close={closeSidebar} />
+                  <Item href="/admin/credit-memo" icon={<HiReceiptTax />} label="Credit Memo" close={closeSidebar} />
+                </Submenu>
 
-          //       {/* Purchase Submenu */}
-          //       <Submenu
-          //         isOpen={openSubmenu === 'purchase'}
-          //         onToggle={() => toggleSubmenu('purchase')}
-          //         icon={<HiPuzzle />}
-          //         label="Purchase"
-          //       >
-          //         <Item href="/admin/purchase-quotation" icon={<HiChevronDown />} label="Quotation" close={closeSidebar} />
-          //         <Item href="/admin/purchase-order" icon={<HiChevronRight />} label="Order" close={closeSidebar} />
-          //         <Item href="/admin/purchase-receipt" icon={<HiReceiptTax />} label="Receipt" close={closeSidebar} />
-          //         <Item href="/admin/purchase-invoice" icon={<HiCurrencyDollar />} label="Invoice" close={closeSidebar} />
-          //         <Item href="/admin/debit-memo" icon={<HiOutlineCreditCard />} label="Debit Memo" close={closeSidebar} />
-          //       </Submenu>
-          //     </div>
-          //   )}
-          // </div>
-
+              
+                <Submenu
+                  isOpen={openSubmenu === 'purchase'}
+                  onToggle={() => toggleSubmenu('purchase')}
+                  icon={<HiPuzzle />}
+                  label="Purchase"
+                >
+                  <Item href="/admin/purchase-quotation" icon={<HiChevronDown />} label="Quotation" close={closeSidebar} />
+                  <Item href="/admin/purchase-order" icon={<HiChevronRight />} label="Order" close={closeSidebar} />
+                  <Item href="/admin/purchase-receipt" icon={<HiReceiptTax />} label="Receipt" close={closeSidebar} />
+                  <Item href="/admin/purchase-invoice" icon={<HiCurrencyDollar />} label="Invoice" close={closeSidebar} />
+                  <Item href="/admin/debit-memo" icon={<HiOutlineCreditCard />} label="Debit Memo" close={closeSidebar} />
+                </Submenu>
+              </div>
+            )}
+          </div>
+       */}
           {/* Transactions View ------------------------------------------ */}
           <div>
             <MenuButton
@@ -189,12 +189,12 @@ export default function AdminSidebar({ children }) {
             )}
           </div>
 
-          {/* CRM --------------------------------------------------------- */}
-          // <Section title="CRM" icon={<SiCivicrm />} isOpen={openMenu === 'CRM'} onToggle={() => toggleMenu('CRM')}>
-          //   <Item href="/admin/LeadDetailsFormMaster" icon={<HiUserGroup />} label="Lead Generation" close={closeSidebar} />
-          //   <Item href="/admin/OpportunityDetailsForm" icon={<HiPuzzle />} label="Opportunity" close={closeSidebar} />
-          // </Section>
-
+          {/* CRM --------------------------------------------------------- 
+          <Section title="CRM" icon={<SiCivicrm />} isOpen={openMenu === 'CRM'} onToggle={() => toggleMenu('CRM')}>
+            <Item href="/admin/LeadDetailsFormMaster" icon={<HiUserGroup />} label="Lead Generation" close={closeSidebar} />
+            <Item href="/admin/OpportunityDetailsForm" icon={<HiPuzzle />} label="Opportunity" close={closeSidebar} />
+          </Section>
+   */}
 
              {/* user View ---------------------------------------------------- */}
           <Section title="User" icon={<SiCivicrm />} isOpen={openMenu === 'user'} onToggle={() => toggleMenu('user')}>
