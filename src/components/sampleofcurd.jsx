@@ -1315,7 +1315,27 @@ export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [customerDetails, setCustomerDetails] = useState(initialCustomerState());
+  const [customerDetails, setCustomerDetails] = useState({
+    customerCode: "",
+    customerName: "",
+    customerGroup: "",
+    customerType: "",
+    emailId: "",
+    mobileNumber: "",
+    billingAddresses: [
+      { address1: "", address2: "", country: "", state: "", city: "", pin: "" },
+    ],
+    shippingAddresses: [
+      { address1: "", address2: "", country: "", state: "", city: "", pin: "" },
+    ],
+    paymentTerms: "",
+    gstNumber: "",
+    gstCategory: "",
+    pan: "",
+    contactPersonName: "",
+    commissionRate: "",
+    glAccount: null,
+  });
 
   useEffect(() => {
     fetchCustomers();
@@ -1406,7 +1426,10 @@ export default function CustomerManagement() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      const payload = normalizePayload(customerDetails);
+      const payload = {
+        ...customerDetails,
+        glAccount: customerDetails.glAccount?._id || null,
+      };
       let res;
       if (customerDetails._id) {
         res = await axios.put(`/api/customers/${customerDetails._id}`, payload);
@@ -1416,7 +1439,6 @@ export default function CustomerManagement() {
         setCustomers(prev => [...prev, res.data]);
       }
       setView("list");
-      resetForm();
     } catch (err) {
       console.error(err);
       alert("Submit failed: " + err.response?.data?.message || err.message);
@@ -1424,12 +1446,28 @@ export default function CustomerManagement() {
   };
 
   const resetForm = () => {
-    setCustomerDetails(initialCustomerState());
+    setCustomerDetails({
+      customerCode: "",
+      customerName: "",
+      customerGroup: "",
+      customerType: "",
+      emailId: "",
+      mobileNumber: "",
+      billingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
+      shippingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
+      paymentTerms: "",
+      gstNumber: "",
+      gstCategory: "",
+      pan: "",
+      contactPersonName: "",
+      commissionRate: "",
+      glAccount: null,
+    });
     setView("list");
   };
 
   const handleEdit = c => {
-    setCustomerDetails(normalizeCustomerData(c));
+    setCustomerDetails(c);
     setView("form");
   };
 
@@ -1449,70 +1487,6 @@ export default function CustomerManagement() {
       c.glAccount?.accountCode,
     ].some(v => v?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  // ✅ Helper: Initial State
-  function initialCustomerState() {
-    return {
-      customerCode: "",
-      customerName: "",
-      customerGroup: "",
-      customerType: "",
-      emailId: "",
-      mobileNumber: "",
-      billingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
-      shippingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
-      paymentTerms: "",
-      gstNumber: "",
-      gstCategory: "",
-      pan: "",
-      contactPersonName: "",
-      commissionRate: "",
-      glAccount: null,
-    };
-  }
-
-  // ✅ Helper: Normalize Data for Form (Edit Mode)
-  function normalizeCustomerData(c) {
-    return {
-      ...initialCustomerState(),
-      ...c,
-      glAccount: c.glAccount
-        ? {
-            _id: c.glAccount._id,
-            value: c.glAccount._id,
-            label: `${c.glAccount.accountCode} - ${c.glAccount.accountName}`,
-            accountCode: c.glAccount.accountCode,
-            accountName: c.glAccount.accountName,
-          }
-        : null,
-      billingAddresses: (c.billingAddresses || []).map(addr => ({
-        address1: addr.address1 || "",
-        address2: addr.address2 || "",
-        city: addr.city || "",
-        state: addr.state || "",
-        country: addr.country || "",
-        pin: addr.pin || "",
-      })),
-      shippingAddresses: (c.shippingAddresses || []).map(addr => ({
-        address1: addr.address1 || "",
-        address2: addr.address2 || "",
-        city: addr.city || "",
-        state: addr.state || "",
-        country: addr.country || "",
-        pin: addr.pin || "",
-      })),
-    };
-  }
-
-  // ✅ Helper: Normalize Payload for API
-  function normalizePayload(details) {
-    return {
-      ...details,
-      glAccount: details.glAccount?._id || null,
-    };
-  }
-
-  /** ---------------------------- VIEWS ---------------------------- */
 
   const renderListView = () => (
     <div className="p-6 sm:p-8">
@@ -1542,8 +1516,19 @@ export default function CustomerManagement() {
         <table className="min-w-full bg-white divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {["Code","Name","Email","Group","Type","GL Account","Actions"].map((h) => (
-                <th key={h} className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+              {[
+                "Code",
+                "Name",
+                "Email",
+                "Group",
+                "Type",
+                "GL Account",
+                "Actions",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-2 text-left text-sm font-medium text-gray-700"
+                >
                   {h}
                 </th>
               ))}
@@ -1559,10 +1544,16 @@ export default function CustomerManagement() {
                 <td className="px-4 py-2">{c.customerType}</td>
                 <td className="px-4 py-2">{c.glAccount?.accountCode || 'N/A'}</td>
                 <td className="px-4 py-2 flex space-x-3">
-                  <button onClick={() => handleEdit(c)} className="text-blue-600">
+                  <button
+                    onClick={() => handleEdit(c)}
+                    className="text-blue-600"
+                  >
                     <FaEdit />
                   </button>
-                  <button onClick={() => handleDelete(c._id)} className="text-red-600">
+                  <button
+                    onClick={() => handleDelete(c._id)}
+                    className="text-red-600"
+                  >
                     <FaTrash />
                   </button>
                 </td>
@@ -1579,8 +1570,8 @@ export default function CustomerManagement() {
       <h2 className="text-2xl font-semibold mb-6 text-center">
         {customerDetails._id ? "Edit Customer" : "New Customer"}
       </h2>
-    
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Customer Basic Info */}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1606,73 +1597,7 @@ export default function CustomerManagement() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Group <span className="text-red-500">*</span>
-            </label>
-            <GroupSearch
-              value={customerDetails.customerGroup}
-              onSelectGroup={handleGroupSelect}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="customerType"
-              value={customerDetails.customerType}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select</option>
-              <option>Individual</option>
-              <option>Business</option>
-              <option>Government</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email ID <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="emailId"
-              type="email"
-              value={customerDetails.emailId}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mobile Number
-            </label>
-            <input
-              name="mobileNumber"
-              type="text"
-              value={customerDetails.mobileNumber}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contact Person
-            </label>
-            <input
-              name="contactPersonName"
-              value={customerDetails.contactPersonName}
-              onChange={handleChange}
-              placeholder="Contact Person"
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
+        {/* Addresses */}
         <h3 className="text-lg font-semibold">Billing Addresses</h3>
         {customerDetails.billingAddresses.map((addr, i) => (
           <div key={i} className="border p-4 rounded mb-4">
@@ -1722,6 +1647,8 @@ export default function CustomerManagement() {
                 className="border p-2 rounded"
               />
               <CountryStateSearch
+                initialCountry={addr.country}
+                initialState={addr.state}
                 onSelectCountry={(c) =>
                   handleAddressChange("billing", i, "country", c.name)
                 }
@@ -1740,6 +1667,7 @@ export default function CustomerManagement() {
           <FaPlus className="mr-1" /> Add Billing Address
         </button>
 
+        {/* Repeat for Shipping */}
         <h3 className="text-lg font-semibold">Shipping Addresses</h3>
         {customerDetails.shippingAddresses.map((addr, i) => (
           <div key={i} className="border p-4 rounded mb-4">
@@ -1789,6 +1717,8 @@ export default function CustomerManagement() {
                 className="border p-2 rounded"
               />
               <CountryStateSearch
+                initialCountry={addr.country}
+                initialState={addr.state}
                 onSelectCountry={(c) =>
                   handleAddressChange("shipping", i, "country", c.name)
                 }
@@ -1806,83 +1736,87 @@ export default function CustomerManagement() {
         >
           <FaPlus className="mr-1" /> Add Shipping Address
         </button>
+        {/* Additional Details */}
+<div className="grid sm:grid-cols-2 gap-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Payment Terms
+    </label>
+    <input
+      name="paymentTerms"
+      value={customerDetails.paymentTerms}
+      onChange={handleChange}
+      placeholder="e.g. 30 Days"
+      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      GST Number
+    </label>
+    <input
+      name="gstNumber"
+      value={customerDetails.gstNumber}
+      onChange={handleChange}
+      placeholder="e.g. 07ACJPD6138K1ZH"
+      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+</div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payment Terms
-            </label>
-            <input
-              name="paymentTerms"
-              value={customerDetails.paymentTerms}
-              onChange={handleChange}
-              placeholder="Payment Terms"
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              GST Number
-            </label>
-            <input
-              name="gstNumber"
-              value={customerDetails.gstNumber}
-              onChange={handleChange}
-              placeholder="GST Number"
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              GST Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="gstCategory"
-              value={customerDetails.gstCategory}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select GST Category</option>
-              <option value="Registered Regular">Registered Regular</option>
-              <option value="Registered Composition">Registered Composition</option>
-              <option value="Unregistered">Unregistered</option>
-              <option value="SEZ">SEZ</option>
-              <option value="Overseas">Overseas</option>
-              <option value="Deemed Export">Deemed Export</option>
-              <option value="UIN Holders">UIN Holders</option>
-              <option value="Tax Deductor">Tax Deductor</option>
-              <option value="Tax Collector">Tax Collector</option>
-              <option value="Input Service Distributor">Input Service Distributor</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              PAN <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="pan"
-              value={customerDetails.pan}
-              onChange={handleChange}
-              placeholder="PAN"
-              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-    
-            <AccountSearch
-              value={customerDetails.glAccount}
-              onSelect={(selected) => {
-                console.log('Selected GL Account:', selected);
-                setCustomerDetails((prev) => ({
-                  ...prev,
-                  glAccount: selected,
-                }));
-              }}
-            />
-          </div>
-        </div>
+<div className="grid sm:grid-cols-2 gap-4 mt-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      GST Category <span className="text-red-500">*</span>
+    </label>
+    <select
+      name="gstCategory"
+      value={customerDetails.gstCategory}
+      onChange={handleChange}
+      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">Select Category</option>
+      <option value="Registered Regular">Registered Regular</option>
+      <option value="Unregistered">Unregistered</option>
+      <option value="Composition">Composition</option>
+    </select>
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      PAN <span className="text-red-500">*</span>
+    </label>
+    <input
+      name="pan"
+      value={customerDetails.pan}
+      onChange={handleChange}
+      placeholder="e.g. ACJPD6138K"
+      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+</div>
 
+{/* GL Account */}
+<div className="mt-4">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    GL Account <span className="text-red-500">*</span>
+  </label>
+  <AccountSearch
+    selectedAccount={customerDetails.glAccount}
+    onSelectAccount={(account) =>
+      setCustomerDetails((prev) => ({ ...prev, glAccount: account }))
+    }
+  />
+  {customerDetails.glAccount ? (
+    <p className="mt-1 text-sm text-gray-500">
+      Selected: {customerDetails.glAccount.accountCode} -{" "}
+      {customerDetails.glAccount.accountName}
+    </p>
+  ) : (
+    <p className="mt-1 text-sm text-red-500">No account selected</p>
+  )}
+</div>
+
+        {/* Buttons */}
         <div className="flex justify-end space-x-3 mt-6">
           <button
             type="button"
@@ -1904,3 +1838,4 @@ export default function CustomerManagement() {
 
   return view === "list" ? renderListView() : renderFormView();
 }
+
