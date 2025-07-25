@@ -36,7 +36,7 @@ const GroupSearch = ({ onSelectGroup }) => {
 
   const handleCustomInput = () => {
     // ✅ Redirect to /admin/createGroup
-    router.push("/admin/createGroup");
+    router.push("/admin/CreateGroup");
   };
 
   const handleClear = () => {
