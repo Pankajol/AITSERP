@@ -974,339 +974,343 @@
 //   const renderFormView = () => (
 //     <div className="p-8 bg-white rounded-lg shadow-lg max-w-5xl mx-auto">
 //       <h2 className="text-2xl font-semibold mb-6 text-center">
-      //   {customerDetails._id ? "Edit Customer" : "New Customer"}
-      // </h2>
-      // <form onSubmit={handleSubmit} className="space-y-6">
-      //   <div className="grid sm:grid-cols-2 gap-4">
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Code
-      //       </label>
-      //       <input
-      //         name="customerCode"
-      //         value={customerDetails.customerCode}
-      //         readOnly
-      //         className="w-full border rounded-md p-2 bg-gray-100"
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Customer Name <span className="text-red-500">*</span>
-      //       </label>
-      //       <input
-      //         name="customerName"
-      //         value={customerDetails.customerName}
-      //         onChange={handleChange}
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //   </div>
+//         {customerDetails._id ? "Edit Customer" : "New Customer"}
+//       </h2>
+//       <form onSubmit={handleSubmit} className="space-y-6">
+//         <div className="grid sm:grid-cols-2 gap-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Code
+//             </label>
+//             <input
+//               name="customerCode"
+//               value={customerDetails.customerCode}
+//               readOnly
+//               className="w-full border rounded-md p-2 bg-gray-100"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Customer Name <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               name="customerName"
+//               value={customerDetails.customerName}
+//               onChange={handleChange}
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//         </div>
 
-      //   <div className="grid sm:grid-cols-2 gap-4">
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Customer Group <span className="text-red-500">*</span>
-      //       </label>
-      //       <GroupSearch
-      //         value={customerDetails.customerGroup}
-      //         onSelectGroup={handleGroupSelect}
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Customer Type <span className="text-red-500">*</span>
-      //       </label>
-      //       <select
-      //         name="customerType"
-      //         value={customerDetails.customerType}
-      //         onChange={handleChange}
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       >
-      //         <option value="">Select</option>
-      //         <option>Individual</option>
-      //         <option>Business</option>
-      //         <option>Government</option>
-      //       </select>
-      //     </div>
-      //   </div>
+//         <div className="grid sm:grid-cols-2 gap-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Customer Group <span className="text-red-500">*</span>
+//             </label>
+//             <GroupSearch
+//               value={customerDetails.customerGroup}
+//               onSelectGroup={handleGroupSelect}
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Customer Type <span className="text-red-500">*</span>
+//             </label>
+//             <select
+//               name="customerType"
+//               value={customerDetails.customerType}
+//               onChange={handleChange}
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             >
+//               <option value="">Select</option>
+//               <option>Individual</option>
+//               <option>Business</option>
+//               <option>Government</option>
+//             </select>
+//           </div>
+//         </div>
 
-      //   <div className="grid sm:grid-cols-3 gap-4">
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Email ID <span className="text-red-500">*</span>
-      //       </label>
-      //       <input
-      //         name="emailId"
-      //         type="email"
-      //         value={customerDetails.emailId}
-      //         onChange={handleChange}
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Mobile Number
-      //       </label>
-      //       <input
-      //         name="mobileNumber"
-      //         type="text"
-      //         value={customerDetails.mobileNumber}
-      //         onChange={handleChange}
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Contact Person
-      //       </label>
-      //       <input
-      //         name="contactPersonName"
-      //         value={customerDetails.contactPersonName}
-      //         onChange={handleChange}
-      //         placeholder="Contact Person"
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //   </div>
+//         <div className="grid sm:grid-cols-3 gap-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Email ID <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               name="emailId"
+//               type="email"
+//               value={customerDetails.emailId}
+//               onChange={handleChange}
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Mobile Number
+//             </label>
+//             <input
+//               name="mobileNumber"
+//               type="text"
+//               value={customerDetails.mobileNumber}
+//               onChange={handleChange}
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Contact Person
+//             </label>
+//             <input
+//               name="contactPersonName"
+//               value={customerDetails.contactPersonName}
+//               onChange={handleChange}
+//               placeholder="Contact Person"
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//         </div>
 
-      //   <h3 className="text-lg font-semibold">Billing Addresses</h3>
-      //   {customerDetails.billingAddresses.map((addr, i) => (
-      //     <div key={i} className="border p-4 rounded mb-4">
-      //       <div className="flex justify-between items-center mb-2">
-      //         <span className="font-medium">Billing Address {i + 1}</span>
-      //         {i > 0 && (
-      //           <button
-      //             type="button"
-      //             onClick={() => removeAddress("billing", i)}
-      //             className="text-red-600"
-      //           >
-      //             <FaMinus />
-      //           </button>
-      //         )}
-      //       </div>
-      //       <div className="grid sm:grid-cols-2 gap-4">
-      //         <input
-      //           value={addr.address1}
-      //           onChange={(e) =>
-      //             handleAddressChange("billing", i, "address1", e.target.value)
-      //           }
-      //           placeholder="Line 1"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.address2}
-      //           onChange={(e) =>
-      //             handleAddressChange("billing", i, "address2", e.target.value)
-      //           }
-      //           placeholder="Line 2"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.city}
-      //           onChange={(e) =>
-      //             handleAddressChange("billing", i, "city", e.target.value)
-      //           }
-      //           placeholder="City"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.pin}
-      //           onChange={(e) =>
-      //             handleAddressChange("billing", i, "pin", e.target.value)
-      //           }
-      //           placeholder="PIN"
-      //           className="border p-2 rounded"
-      //         />
-      //         <CountryStateSearch
-      //           onSelectCountry={(c) =>
-      //             handleAddressChange("billing", i, "country", c.name)
-      //           }
-      //           onSelectState={(s) =>
-      //             handleAddressChange("billing", i, "state", s.name)
-      //           }
-      //         />
-      //       </div>
-      //     </div>
-      //   ))}
-      //   <button
-      //     type="button"
-      //     onClick={() => addAddress("billing")}
-      //     className="inline-flex items-center text-blue-600 mb-6"
-      //   >
-      //     <FaPlus className="mr-1" /> Add Billing Address
-      //   </button>
+//         <h3 className="text-lg font-semibold">Billing Addresses</h3>
+//         {customerDetails.billingAddresses.map((addr, i) => (
+//           <div key={i} className="border p-4 rounded mb-4">
+//             <div className="flex justify-between items-center mb-2">
+//               <span className="font-medium">Billing Address {i + 1}</span>
+//               {i > 0 && (
+//                 <button
+//                   type="button"
+//                   onClick={() => removeAddress("billing", i)}
+//                   className="text-red-600"
+//                 >
+//                   <FaMinus />
+//                 </button>
+//               )}
+//             </div>
+//             <div className="grid sm:grid-cols-2 gap-4">
+//               <input
+//                 value={addr.address1}
+//                 onChange={(e) =>
+//                   handleAddressChange("billing", i, "address1", e.target.value)
+//                 }
+//                 placeholder="Line 1"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.address2}
+//                 onChange={(e) =>
+//                   handleAddressChange("billing", i, "address2", e.target.value)
+//                 }
+//                 placeholder="Line 2"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.city}
+//                 onChange={(e) =>
+//                   handleAddressChange("billing", i, "city", e.target.value)
+//                 }
+//                 placeholder="City"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.pin}
+//                 onChange={(e) =>
+//                   handleAddressChange("billing", i, "pin", e.target.value)
+//                 }
+//                 placeholder="PIN"
+//                 className="border p-2 rounded"
+//               />
+//               <CountryStateSearch
+//                 onSelectCountry={(c) =>
+//                   handleAddressChange("billing", i, "country", c.name)
+//                 }
+//                 onSelectState={(s) =>
+//                   handleAddressChange("billing", i, "state", s.name)
+//                 }
+//               />
+//             </div>
+//           </div>
+//         ))}
+//         <button
+//           type="button"
+//           onClick={() => addAddress("billing")}
+//           className="inline-flex items-center text-blue-600 mb-6"
+//         >
+//           <FaPlus className="mr-1" /> Add Billing Address
+//         </button>
 
-      //   <h3 className="text-lg font-semibold">Shipping Addresses</h3>
-      //   {customerDetails.shippingAddresses.map((addr, i) => (
-      //     <div key={i} className="border p-4 rounded mb-4">
-      //       <div className="flex justify-between items-center mb-2">
-      //         <span className="font-medium">Shipping Address {i + 1}</span>
-      //         {i > 0 && (
-      //           <button
-      //             type="button"
-      //             onClick={() => removeAddress("shipping", i)}
-      //             className="text-red-600"
-      //           >
-      //             <FaMinus />
-      //           </button>
-      //         )}
-      //       </div>
-      //       <div className="grid sm:grid-cols-2 gap-4">
-      //         <input
-      //           value={addr.address1}
-      //           onChange={(e) =>
-      //             handleAddressChange("shipping", i, "address1", e.target.value)
-      //           }
-      //           placeholder="Line 1"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.address2}
-      //           onChange={(e) =>
-      //             handleAddressChange("shipping", i, "address2", e.target.value)
-      //           }
-      //           placeholder="Line 2"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.city}
-      //           onChange={(e) =>
-      //             handleAddressChange("shipping", i, "city", e.target.value)
-      //           }
-      //           placeholder="City"
-      //           className="border p-2 rounded"
-      //         />
-      //         <input
-      //           value={addr.pin}
-      //           onChange={(e) =>
-      //             handleAddressChange("shipping", i, "pin", e.target.value)
-      //           }
-      //           placeholder="PIN"
-      //           className="border p-2 rounded"
-      //         />
-      //         <CountryStateSearch
-      //           onSelectCountry={(c) =>
-      //             handleAddressChange("shipping", i, "country", c.name)
-      //           }
-      //           onSelectState={(s) =>
-      //             handleAddressChange("shipping", i, "state", s.name)
-      //           }
-      //         />
-      //       </div>
-      //     </div>
-      //   ))}
-      //   <button
-      //     type="button"
-      //     onClick={() => addAddress("shipping")}
-      //     className="inline-flex items-center text-blue-600 mb-6"
-      //   >
-      //     <FaPlus className="mr-1" /> Add Shipping Address
-      //   </button>
+//         <h3 className="text-lg font-semibold">Shipping Addresses</h3>
+//         {customerDetails.shippingAddresses.map((addr, i) => (
+//           <div key={i} className="border p-4 rounded mb-4">
+//             <div className="flex justify-between items-center mb-2">
+//               <span className="font-medium">Shipping Address {i + 1}</span>
+//               {i > 0 && (
+//                 <button
+//                   type="button"
+//                   onClick={() => removeAddress("shipping", i)}
+//                   className="text-red-600"
+//                 >
+//                   <FaMinus />
+//                 </button>
+//               )}
+//             </div>
+//             <div className="grid sm:grid-cols-2 gap-4">
+//               <input
+//                 value={addr.address1}
+//                 onChange={(e) =>
+//                   handleAddressChange("shipping", i, "address1", e.target.value)
+//                 }
+//                 placeholder="Line 1"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.address2}
+//                 onChange={(e) =>
+//                   handleAddressChange("shipping", i, "address2", e.target.value)
+//                 }
+//                 placeholder="Line 2"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.city}
+//                 onChange={(e) =>
+//                   handleAddressChange("shipping", i, "city", e.target.value)
+//                 }
+//                 placeholder="City"
+//                 className="border p-2 rounded"
+//               />
+//               <input
+//                 value={addr.pin}
+//                 onChange={(e) =>
+//                   handleAddressChange("shipping", i, "pin", e.target.value)
+//                 }
+//                 placeholder="PIN"
+//                 className="border p-2 rounded"
+//               />
+//               <CountryStateSearch
+//                 onSelectCountry={(c) =>
+//                   handleAddressChange("shipping", i, "country", c.name)
+//                 }
+//                 onSelectState={(s) =>
+//                   handleAddressChange("shipping", i, "state", s.name)
+//                 }
+//               />
+//             </div>
+//           </div>
+//         ))}
+//         <button
+//           type="button"
+//           onClick={() => addAddress("shipping")}
+//           className="inline-flex items-center text-blue-600 mb-6"
+//         >
+//           <FaPlus className="mr-1" /> Add Shipping Address
+//         </button>
 
-      //   <div className="grid sm:grid-cols-2 gap-4">
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         Payment Terms
-      //       </label>
-      //       <input
-      //         name="paymentTerms"
-      //         value={customerDetails.paymentTerms}
-      //         onChange={handleChange}
-      //         placeholder="Payment Terms"
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         GST Number
-      //       </label>
-      //       <input
-      //         name="gstNumber"
-      //         value={customerDetails.gstNumber}
-      //         onChange={handleChange}
-      //         placeholder="GST Number"
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         GST Category <span className="text-red-500">*</span>
-      //       </label>
-      //       <select
-      //         name="gstCategory"
-      //         value={customerDetails.gstCategory}
-      //         onChange={handleChange}
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //         required
-      //       >
-      //         <option value="">Select GST Category</option>
-      //         <option value="Registered Regular">Registered Regular</option>
-      //         <option value="Registered Composition">Registered Composition</option>
-      //         <option value="Unregistered">Unregistered</option>
-      //         <option value="SEZ">SEZ</option>
-      //         <option value="Overseas">Overseas</option>
-      //         <option value="Deemed Export">Deemed Export</option>
-      //         <option value="UIN Holders">UIN Holders</option>
-      //         <option value="Tax Deductor">Tax Deductor</option>
-      //         <option value="Tax Collector">Tax Collector</option>
-      //         <option value="Input Service Distributor">Input Service Distributor</option>
-      //       </select>
-      //     </div>
-      //     <div>
-      //       <label className="block text-sm font-medium text-gray-700 mb-1">
-      //         PAN <span className="text-red-500">*</span>
-      //       </label>
-      //       <input
-      //         name="pan"
-      //         value={customerDetails.pan}
-      //         onChange={handleChange}
-      //         placeholder="PAN"
-      //         className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-      //       />
-      //     </div>
-      //     <div>
+//         <div className="grid sm:grid-cols-2 gap-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Payment Terms
+//             </label>
+//             <input
+//               name="paymentTerms"
+//               value={customerDetails.paymentTerms}
+//               onChange={handleChange}
+//               placeholder="Payment Terms"
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               GST Number
+//             </label>
+//             <input
+//               name="gstNumber"
+//               value={customerDetails.gstNumber}
+//               onChange={handleChange}
+//               placeholder="GST Number"
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               GST Category <span className="text-red-500">*</span>
+//             </label>
+//             <select
+//               name="gstCategory"
+//               value={customerDetails.gstCategory}
+//               onChange={handleChange}
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//               required
+//             >
+//               <option value="">Select GST Category</option>
+//               <option value="Registered Regular">Registered Regular</option>
+//               <option value="Registered Composition">Registered Composition</option>
+//               <option value="Unregistered">Unregistered</option>
+//               <option value="SEZ">SEZ</option>
+//               <option value="Overseas">Overseas</option>
+//               <option value="Deemed Export">Deemed Export</option>
+//               <option value="UIN Holders">UIN Holders</option>
+//               <option value="Tax Deductor">Tax Deductor</option>
+//               <option value="Tax Collector">Tax Collector</option>
+//               <option value="Input Service Distributor">Input Service Distributor</option>
+//             </select>
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               PAN <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               name="pan"
+//               value={customerDetails.pan}
+//               onChange={handleChange}
+//               placeholder="PAN"
+//               className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//           <div>
     
-      //       <AccountSearch
-      //         value={customerDetails.glAccount}
-      //         onSelect={(selected) => {
-      //           console.log('Selected GL Account:', selected);
-      //           setCustomerDetails((prev) => ({
-      //             ...prev,
-      //             glAccount: selected,
-      //           }));
-      //         }}
-      //       />
-      //     </div>
-      //   </div>
+//             <AccountSearch
+//               value={customerDetails.glAccount}
+//               onSelect={(selected) => {
+//                 console.log('Selected GL Account:', selected);
+//                 setCustomerDetails((prev) => ({
+//                   ...prev,
+//                   glAccount: selected,
+//                 }));
+//               }}
+//             />
+//           </div>
+//         </div>
 
-      //   <div className="flex justify-end space-x-3 mt-6">
-      //     <button
-      //       type="button"
-      //       onClick={resetForm}
-      //       className="px-4 py-2 bg-gray-500 text-white rounded-md"
-      //     >
-      //       Cancel
-      //     </button>
-      //     <button
-      //       type="submit"
-      //       className="px-4 py-2 bg-green-600 text-white rounded-md"
-      //     >
-      //       {customerDetails._id ? "Update" : "Create"}
-      //     </button>
-      //   </div>
-      // </form>
+//         <div className="flex justify-end space-x-3 mt-6">
+//           <button
+//             type="button"
+//             onClick={resetForm}
+//             className="px-4 py-2 bg-gray-500 text-white rounded-md"
+//           >
+//             Cancel
+//           </button>
+//           <button
+//             type="submit"
+//             className="px-4 py-2 bg-green-600 text-white rounded-md"
+//           >
+//             {customerDetails._id ? "Update" : "Create"}
+//           </button>
+//         </div>
+//       </form>
 //     </div>
 //   );
 
 //   return view === "list" ? renderListView() : renderFormView();
 // }
+
+
+
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaMinus } from "react-icons/fa";
 import CountryStateSearch from "@/components/CountryStateSearch";
-import GroupSearch from "@/components/groupmaster";
+import GroupSearch from "@/components/groupmaster"; // This is your Customer Group component
 import AccountSearch from "@/components/AccountSearch";
 
 export default function CustomerManagement() {
@@ -1318,7 +1322,7 @@ export default function CustomerManagement() {
   const [customerDetails, setCustomerDetails] = useState({
     customerCode: "",
     customerName: "",
-    customerGroup: "",
+    customerGroup: "", // This is the customer group field
     customerType: "",
     emailId: "",
     mobileNumber: "",
@@ -1371,6 +1375,7 @@ export default function CustomerManagement() {
   };
 
   const handleGroupSelect = group => {
+    // This function handles the selection from GroupSearch and updates customerGroup
     setCustomerDetails(prev => ({ ...prev, customerGroup: group?.name || "" }));
   };
 
@@ -1407,6 +1412,7 @@ export default function CustomerManagement() {
       { field: "customerGroup", label: "Customer Group" },
       { field: "customerType", label: "Customer Type" },
       { field: "glAccount", label: "GL Account" },
+      // { field: "emailId", label: "Email ID" },
       { field: "gstCategory", label: "GST Category" },
       { field: "pan", label: "PAN" },
     ];
@@ -1419,6 +1425,7 @@ export default function CustomerManagement() {
         return false;
       }
     }
+    // ... other validations
     return true;
   };
 
@@ -1426,6 +1433,7 @@ export default function CustomerManagement() {
     e.preventDefault();
     if (!validate()) return;
     try {
+      // Prepare payload: replace glAccount object with its _id
       const payload = {
         ...customerDetails,
         glAccount: customerDetails.glAccount?._id || null,
@@ -1466,8 +1474,37 @@ export default function CustomerManagement() {
     setView("list");
   };
 
-  const handleEdit = c => {
-    setCustomerDetails(c);
+  const handleEdit = (c) => {
+    setCustomerDetails({
+      ...c,
+      glAccount: c.glAccount
+        ? {
+            _id: c.glAccount._id,
+            value: c.glAccount._id,
+            label: `${c.glAccount.accountCode} - ${c.glAccount.accountName}`,
+            accountCode: c.glAccount.accountCode,
+            accountName: c.glAccount.accountName,
+          }
+        : null,
+      // Ensure billingAddresses is an array and each object has expected properties
+      billingAddresses: (c.billingAddresses || []).map(addr => ({
+        address1: addr.address1 || "",
+        address2: addr.address2 || "",
+        city: addr.city || "",
+        state: addr.state || "",
+        country: addr.country || "",
+        pin: addr.pin || "",
+      })),
+      // Ensure shippingAddresses is an array and each object has expected properties
+      shippingAddresses: (c.shippingAddresses || []).map(addr => ({
+        address1: addr.address1 || "",
+        address2: addr.address2 || "",
+        city: addr.city || "",
+        state: addr.state || "",
+        country: addr.country || "",
+        pin: addr.pin || "",
+      })),
+    });
     setView("form");
   };
 
@@ -1482,7 +1519,7 @@ export default function CustomerManagement() {
       c.customerCode,
       c.customerName,
       c.emailId,
-      c.customerGroup,
+      c.customerGroup, // Include customerGroup in search
       c.customerType,
       c.glAccount?.accountCode,
     ].some(v => v?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -1495,6 +1532,23 @@ export default function CustomerManagement() {
         <button
           onClick={() => {
             generateCustomerCode();
+            setCustomerDetails({ // Reset form when adding new customer
+              customerCode: "",
+              customerName: "",
+              customerGroup: "",
+              customerType: "",
+              emailId: "",
+              mobileNumber: "",
+              billingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
+              shippingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
+              paymentTerms: "",
+              gstNumber: "",
+              gstCategory: "",
+              pan: "",
+              contactPersonName: "",
+              commissionRate: "",
+              glAccount: null,
+            });
             setView("form");
           }}
           className="mt-4 sm:mt-0 inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -1520,7 +1574,7 @@ export default function CustomerManagement() {
                 "Code",
                 "Name",
                 "Email",
-                "Group",
+                "Group", // Display Customer Group in the table
                 "Type",
                 "GL Account",
                 "Actions",
@@ -1540,7 +1594,7 @@ export default function CustomerManagement() {
                 <td className="px-4 py-2">{c.customerCode}</td>
                 <td className="px-4 py-2">{c.customerName}</td>
                 <td className="px-4 py-2">{c.emailId}</td>
-                <td className="px-4 py-2">{c.customerGroup}</td>
+                <td className="px-4 py-2">{c.customerGroup}</td> {/* Display customerGroup */}
                 <td className="px-4 py-2">{c.customerType}</td>
                 <td className="px-4 py-2">{c.glAccount?.accountCode || 'N/A'}</td>
                 <td className="px-4 py-2 flex space-x-3">
@@ -1571,7 +1625,6 @@ export default function CustomerManagement() {
         {customerDetails._id ? "Edit Customer" : "New Customer"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer Basic Info */}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1597,13 +1650,80 @@ export default function CustomerManagement() {
           </div>
         </div>
 
-        {/* Addresses */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Customer Group <span className="text-red-500">*</span>
+            </label>
+            {/* GroupSearch component for Customer Group */}
+            <GroupSearch
+              value={customerDetails.customerGroup}
+              onSelectGroup={handleGroupSelect}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Customer Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="customerType"
+              value={customerDetails.customerType}
+              onChange={handleChange}
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select</option>
+              <option>Individual</option>
+              <option>Business</option>
+              <option>Government</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email ID <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="emailId"
+              type="email"
+              value={customerDetails.emailId}
+              onChange={handleChange}
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mobile Number
+            </label>
+            <input
+              name="mobileNumber"
+              type="text"
+              value={customerDetails.mobileNumber}
+              onChange={handleChange}
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Person
+            </label>
+            <input
+              name="contactPersonName"
+              value={customerDetails.contactPersonName}
+              onChange={handleChange}
+              placeholder="Contact Person"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
         <h3 className="text-lg font-semibold">Billing Addresses</h3>
         {customerDetails.billingAddresses.map((addr, i) => (
           <div key={i} className="border p-4 rounded mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Billing Address {i + 1}</span>
-              {i > 0 && (
+              {customerDetails.billingAddresses.length > 1 && ( // Only show remove if more than one address
                 <button
                   type="button"
                   onClick={() => removeAddress("billing", i)}
@@ -1646,9 +1766,10 @@ export default function CustomerManagement() {
                 placeholder="PIN"
                 className="border p-2 rounded"
               />
+              {/* CountryStateSearch for billing address */}
               <CountryStateSearch
-                initialCountry={addr.country}
-                initialState={addr.state}
+                selectedCountry={addr.country} // Pass current values for pre-population
+                selectedState={addr.state} // Pass current values for pre-population
                 onSelectCountry={(c) =>
                   handleAddressChange("billing", i, "country", c.name)
                 }
@@ -1667,13 +1788,12 @@ export default function CustomerManagement() {
           <FaPlus className="mr-1" /> Add Billing Address
         </button>
 
-        {/* Repeat for Shipping */}
         <h3 className="text-lg font-semibold">Shipping Addresses</h3>
         {customerDetails.shippingAddresses.map((addr, i) => (
           <div key={i} className="border p-4 rounded mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Shipping Address {i + 1}</span>
-              {i > 0 && (
+              {customerDetails.shippingAddresses.length > 1 && ( // Only show remove if more than one address
                 <button
                   type="button"
                   onClick={() => removeAddress("shipping", i)}
@@ -1716,9 +1836,10 @@ export default function CustomerManagement() {
                 placeholder="PIN"
                 className="border p-2 rounded"
               />
+              {/* CountryStateSearch for shipping address */}
               <CountryStateSearch
-                initialCountry={addr.country}
-                initialState={addr.state}
+                selectedCountry={addr.country} // Pass current values for pre-population
+                selectedState={addr.state} // Pass current values for pre-population
                 onSelectCountry={(c) =>
                   handleAddressChange("shipping", i, "country", c.name)
                 }
@@ -1736,87 +1857,83 @@ export default function CustomerManagement() {
         >
           <FaPlus className="mr-1" /> Add Shipping Address
         </button>
-        {/* Additional Details */}
-<div className="grid sm:grid-cols-2 gap-4">
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Payment Terms
-    </label>
-    <input
-      name="paymentTerms"
-      value={customerDetails.paymentTerms}
-      onChange={handleChange}
-      placeholder="e.g. 30 Days"
-      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      GST Number
-    </label>
-    <input
-      name="gstNumber"
-      value={customerDetails.gstNumber}
-      onChange={handleChange}
-      placeholder="e.g. 07ACJPD6138K1ZH"
-      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-</div>
 
-<div className="grid sm:grid-cols-2 gap-4 mt-4">
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      GST Category <span className="text-red-500">*</span>
-    </label>
-    <select
-      name="gstCategory"
-      value={customerDetails.gstCategory}
-      onChange={handleChange}
-      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">Select Category</option>
-      <option value="Registered Regular">Registered Regular</option>
-      <option value="Unregistered">Unregistered</option>
-      <option value="Composition">Composition</option>
-    </select>
-  </div>
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      PAN <span className="text-red-500">*</span>
-    </label>
-    <input
-      name="pan"
-      value={customerDetails.pan}
-      onChange={handleChange}
-      placeholder="e.g. ACJPD6138K"
-      className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-</div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Payment Terms
+            </label>
+            <input
+              name="paymentTerms"
+              value={customerDetails.paymentTerms}
+              onChange={handleChange}
+              placeholder="Payment Terms"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              GST Number
+            </label>
+            <input
+              name="gstNumber"
+              value={customerDetails.gstNumber}
+              onChange={handleChange}
+              placeholder="GST Number"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              GST Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="gstCategory"
+              value={customerDetails.gstCategory}
+              onChange={handleChange}
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select GST Category</option>
+              <option value="Registered Regular">Registered Regular</option>
+              <option value="Registered Composition">Registered Composition</option>
+              <option value="Unregistered">Unregistered</option>
+              <option value="SEZ">SEZ</option>
+              <option value="Overseas">Overseas</option>
+              <option value="Deemed Export">Deemed Export</option>
+              <option value="UIN Holders">UIN Holders</option>
+              <option value="Tax Deductor">Tax Deductor</option>
+              <option value="Tax Collector">Tax Collector</option>
+              <option value="Input Service Distributor">Input Service Distributor</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              PAN <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="pan"
+              value={customerDetails.pan}
+              onChange={handleChange}
+              placeholder="PAN"
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            {/* AccountSearch component for GL Account */}
+            <AccountSearch
+              value={customerDetails.glAccount}
+              onSelect={(selected) => {
+                console.log('Selected GL Account:', selected);
+                setCustomerDetails((prev) => ({
+                  ...prev,
+                  glAccount: selected,
+                }));
+              }}
+            />
+          </div>
+        </div>
 
-{/* GL Account */}
-<div className="mt-4">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    GL Account <span className="text-red-500">*</span>
-  </label>
-  <AccountSearch
-    selectedAccount={customerDetails.glAccount}
-    onSelectAccount={(account) =>
-      setCustomerDetails((prev) => ({ ...prev, glAccount: account }))
-    }
-  />
-  {customerDetails.glAccount ? (
-    <p className="mt-1 text-sm text-gray-500">
-      Selected: {customerDetails.glAccount.accountCode} -{" "}
-      {customerDetails.glAccount.accountName}
-    </p>
-  ) : (
-    <p className="mt-1 text-sm text-red-500">No account selected</p>
-  )}
-</div>
-
-        {/* Buttons */}
         <div className="flex justify-end space-x-3 mt-6">
           <button
             type="button"
@@ -1838,4 +1955,3 @@ export default function CustomerManagement() {
 
   return view === "list" ? renderListView() : renderFormView();
 }
-
