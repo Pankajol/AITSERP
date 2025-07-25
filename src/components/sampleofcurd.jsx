@@ -1302,15 +1302,13 @@
 // }
 
 
-
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaMinus } from "react-icons/fa";
 import CountryStateSearch from "@/components/CountryStateSearch";
-import GroupSearch from "@/components/groupmaster"; // This is your Customer Group component
+import GroupSearch from "@/components/groupmaster";
 import AccountSearch from "@/components/AccountSearch";
 
 export default function CustomerManagement() {
@@ -1322,7 +1320,7 @@ export default function CustomerManagement() {
   const [customerDetails, setCustomerDetails] = useState({
     customerCode: "",
     customerName: "",
-    customerGroup: "", // This is the customer group field
+    customerGroup: "", // This will now typically be a string (name) from the DB
     customerType: "",
     emailId: "",
     mobileNumber: "",
@@ -1338,7 +1336,7 @@ export default function CustomerManagement() {
     pan: "",
     contactPersonName: "",
     commissionRate: "",
-    glAccount: null,
+    glAccount: null, // This should be an object for AccountSearch
   });
 
   useEffect(() => {
@@ -1366,7 +1364,10 @@ export default function CustomerManagement() {
         ...prev,
         customerCode: `CUST-${num.toString().padStart(4, "0")}`,
       }));
-    } catch {}
+    } catch {
+      // Fallback if code generation fails, or handle error
+      setCustomerDetails(prev => ({ ...prev, customerCode: "CUST-0001" }));
+    }
   };
 
   const handleChange = e => {
@@ -1375,7 +1376,7 @@ export default function CustomerManagement() {
   };
 
   const handleGroupSelect = group => {
-    // This function handles the selection from GroupSearch and updates customerGroup
+    // GroupSearch returns an object (or null), we store its name
     setCustomerDetails(prev => ({ ...prev, customerGroup: group?.name || "" }));
   };
 
@@ -1399,7 +1400,7 @@ export default function CustomerManagement() {
 
   const removeAddress = (type, idx) => {
     const key = type === "billing" ? "billingAddresses" : "shippingAddresses";
-    if (customerDetails[key].length === 1) return;
+    if (customerDetails[key].length === 1) return; // Prevent removing the last address
     setCustomerDetails(prev => ({
       ...prev,
       [key]: prev[key].filter((_, i) => i !== idx),
@@ -1411,21 +1412,36 @@ export default function CustomerManagement() {
       { field: "customerName", label: "Customer Name" },
       { field: "customerGroup", label: "Customer Group" },
       { field: "customerType", label: "Customer Type" },
-      { field: "glAccount", label: "GL Account" },
-      // { field: "emailId", label: "Email ID" },
+      // Validate glAccount based on its structure
+      { field: "glAccount", label: "GL Account", check: (val) => val?._id },
       { field: "gstCategory", label: "GST Category" },
       { field: "pan", label: "PAN" },
     ];
-    for (let { field, label } of reqFields) {
-      if (
-        !customerDetails[field] ||
-        (field === "glAccount" && !customerDetails.glAccount?._id)
-      ) {
+    for (let { field, label, check } of reqFields) {
+      if (check ? !check(customerDetails[field]) : !customerDetails[field]) {
         alert(`${label} is required`);
         return false;
       }
     }
-    // ... other validations
+
+    // Validate addresses (at least one billing and shipping address with address1, country, state, city)
+    const validateAddresses = (addresses, type) => {
+      if (!addresses || addresses.length === 0) {
+        alert(`At least one ${type} address is required.`);
+        return false;
+      }
+      for (const addr of addresses) {
+        if (!addr.address1 || !addr.country || !addr.state || !addr.city || !addr.pin) {
+          alert(`All fields (Line 1, Country, State, City, PIN) are required for ${type} addresses.`);
+          return false;
+        }
+      }
+      return true;
+    };
+
+    if (!validateAddresses(customerDetails.billingAddresses, "billing")) return false;
+    if (!validateAddresses(customerDetails.shippingAddresses, "shipping")) return false;
+
     return true;
   };
 
@@ -1436,7 +1452,7 @@ export default function CustomerManagement() {
       // Prepare payload: replace glAccount object with its _id
       const payload = {
         ...customerDetails,
-        glAccount: customerDetails.glAccount?._id || null,
+        glAccount: customerDetails.glAccount?._id || null, // Send only _id to backend
       };
       let res;
       if (customerDetails._id) {
@@ -1447,6 +1463,7 @@ export default function CustomerManagement() {
         setCustomers(prev => [...prev, res.data]);
       }
       setView("list");
+      resetForm(); // Reset form after successful submission
     } catch (err) {
       console.error(err);
       alert("Submit failed: " + err.response?.data?.message || err.message);
@@ -1471,22 +1488,23 @@ export default function CustomerManagement() {
       commissionRate: "",
       glAccount: null,
     });
-    setView("list");
+    // Do not change view here, let the submission handle it
   };
 
   const handleEdit = (c) => {
     setCustomerDetails({
       ...c,
+      // Ensure customerGroup is treated as a string as it's directly from DB
+      customerGroup: c.customerGroup || "",
       glAccount: c.glAccount
         ? {
             _id: c.glAccount._id,
             value: c.glAccount._id,
             label: `${c.glAccount.accountCode} - ${c.glAccount.accountName}`,
-            accountCode: c.glAccount.accountCode,
+            accountCode: c.glAccount.accountCode, // Keep these for potential display within AccountSearch if needed
             accountName: c.glAccount.accountName,
           }
         : null,
-      // Ensure billingAddresses is an array and each object has expected properties
       billingAddresses: (c.billingAddresses || []).map(addr => ({
         address1: addr.address1 || "",
         address2: addr.address2 || "",
@@ -1495,7 +1513,6 @@ export default function CustomerManagement() {
         country: addr.country || "",
         pin: addr.pin || "",
       })),
-      // Ensure shippingAddresses is an array and each object has expected properties
       shippingAddresses: (c.shippingAddresses || []).map(addr => ({
         address1: addr.address1 || "",
         address2: addr.address2 || "",
@@ -1510,8 +1527,13 @@ export default function CustomerManagement() {
 
   const handleDelete = async id => {
     if (!confirm("Are you sure?")) return;
-    await axios.delete(`/api/customers/${id}`);
-    setCustomers(prev => prev.filter(c => c._id !== id));
+    try {
+      await axios.delete(`/api/customers/${id}`);
+      setCustomers(prev => prev.filter(c => c._id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete customer.");
+    }
   };
 
   const filtered = customers.filter(c =>
@@ -1519,7 +1541,7 @@ export default function CustomerManagement() {
       c.customerCode,
       c.customerName,
       c.emailId,
-      c.customerGroup, // Include customerGroup in search
+      c.customerGroup,
       c.customerType,
       c.glAccount?.accountCode,
     ].some(v => v?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -1531,24 +1553,8 @@ export default function CustomerManagement() {
         <h1 className="text-2xl font-bold">Customer Management</h1>
         <button
           onClick={() => {
+            resetForm(); // Ensure form is truly clean for a new entry
             generateCustomerCode();
-            setCustomerDetails({ // Reset form when adding new customer
-              customerCode: "",
-              customerName: "",
-              customerGroup: "",
-              customerType: "",
-              emailId: "",
-              mobileNumber: "",
-              billingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
-              shippingAddresses: [{ address1: "", address2: "", country: "", state: "", city: "", pin: "" }],
-              paymentTerms: "",
-              gstNumber: "",
-              gstCategory: "",
-              pan: "",
-              contactPersonName: "",
-              commissionRate: "",
-              glAccount: null,
-            });
             setView("form");
           }}
           className="mt-4 sm:mt-0 inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -1574,7 +1580,7 @@ export default function CustomerManagement() {
                 "Code",
                 "Name",
                 "Email",
-                "Group", // Display Customer Group in the table
+                "Group",
                 "Type",
                 "GL Account",
                 "Actions",
@@ -1589,30 +1595,44 @@ export default function CustomerManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filtered.map((c) => (
-              <tr key={c._id} className="hover:bg-gray-50">
-                <td className="px-4 py-2">{c.customerCode}</td>
-                <td className="px-4 py-2">{c.customerName}</td>
-                <td className="px-4 py-2">{c.emailId}</td>
-                <td className="px-4 py-2">{c.customerGroup}</td> {/* Display customerGroup */}
-                <td className="px-4 py-2">{c.customerType}</td>
-                <td className="px-4 py-2">{c.glAccount?.accountCode || 'N/A'}</td>
-                <td className="px-4 py-2 flex space-x-3">
-                  <button
-                    onClick={() => handleEdit(c)}
-                    className="text-blue-600"
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(c._id)}
-                    className="text-red-600"
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4">Loading customers...</td>
               </tr>
-            ))}
+            ) : error ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4 text-red-600">{error}</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4">No customers found.</td>
+              </tr>
+            ) : (
+              filtered.map((c) => (
+                <tr key={c._id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2">{c.customerCode}</td>
+                  <td className="px-4 py-2">{c.customerName}</td>
+                  <td className="px-4 py-2">{c.emailId}</td>
+                  <td className="px-4 py-2">{c.customerGroup}</td>
+                  <td className="px-4 py-2">{c.customerType}</td>
+                  <td className="px-4 py-2">{c.glAccount?.accountCode || 'N/A'}</td>
+                  <td className="px-4 py-2 flex space-x-3">
+                    <button
+                      onClick={() => handleEdit(c)}
+                      className="text-blue-600"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c._id)}
+                      className="text-red-600"
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -1655,9 +1675,9 @@ export default function CustomerManagement() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Customer Group <span className="text-red-500">*</span>
             </label>
-            {/* GroupSearch component for Customer Group */}
+            {/* Pass an object to GroupSearch's value prop for pre-filling */}
             <GroupSearch
-              value={customerDetails.customerGroup}
+              value={customerDetails.customerGroup ? { name: customerDetails.customerGroup } : null}
               onSelectGroup={handleGroupSelect}
             />
           </div>
@@ -1723,7 +1743,7 @@ export default function CustomerManagement() {
           <div key={i} className="border p-4 rounded mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Billing Address {i + 1}</span>
-              {customerDetails.billingAddresses.length > 1 && ( // Only show remove if more than one address
+              {customerDetails.billingAddresses.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeAddress("billing", i)}
@@ -1739,8 +1759,9 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("billing", i, "address1", e.target.value)
                 }
-                placeholder="Line 1"
+                placeholder="Line 1 *"
                 className="border p-2 rounded"
+                required // Added required
               />
               <input
                 value={addr.address2}
@@ -1755,21 +1776,22 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("billing", i, "city", e.target.value)
                 }
-                placeholder="City"
+                placeholder="City *"
                 className="border p-2 rounded"
+                required // Added required
               />
               <input
                 value={addr.pin}
                 onChange={(e) =>
                   handleAddressChange("billing", i, "pin", e.target.value)
                 }
-                placeholder="PIN"
+                placeholder="PIN *"
                 className="border p-2 rounded"
+                required // Added required
               />
-              {/* CountryStateSearch for billing address */}
               <CountryStateSearch
-                selectedCountry={addr.country} // Pass current values for pre-population
-                selectedState={addr.state} // Pass current values for pre-population
+                selectedCountry={addr.country} // Pass current country for pre-filling
+                selectedState={addr.state}   // Pass current state for pre-filling
                 onSelectCountry={(c) =>
                   handleAddressChange("billing", i, "country", c.name)
                 }
@@ -1777,6 +1799,7 @@ export default function CustomerManagement() {
                   handleAddressChange("billing", i, "state", s.name)
                 }
               />
+              {/* Note: CountryStateSearch might need its own internal logic to display "Country *" and "State *" labels or use placeholders. */}
             </div>
           </div>
         ))}
@@ -1793,7 +1816,7 @@ export default function CustomerManagement() {
           <div key={i} className="border p-4 rounded mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Shipping Address {i + 1}</span>
-              {customerDetails.shippingAddresses.length > 1 && ( // Only show remove if more than one address
+              {customerDetails.shippingAddresses.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeAddress("shipping", i)}
@@ -1809,8 +1832,9 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("shipping", i, "address1", e.target.value)
                 }
-                placeholder="Line 1"
+                placeholder="Line 1 *"
                 className="border p-2 rounded"
+                required // Added required
               />
               <input
                 value={addr.address2}
@@ -1825,21 +1849,22 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("shipping", i, "city", e.target.value)
                 }
-                placeholder="City"
+                placeholder="City *"
                 className="border p-2 rounded"
+                required // Added required
               />
               <input
                 value={addr.pin}
                 onChange={(e) =>
                   handleAddressChange("shipping", i, "pin", e.target.value)
                 }
-                placeholder="PIN"
+                placeholder="PIN *"
                 className="border p-2 rounded"
+                required // Added required
               />
-              {/* CountryStateSearch for shipping address */}
               <CountryStateSearch
-                selectedCountry={addr.country} // Pass current values for pre-population
-                selectedState={addr.state} // Pass current values for pre-population
+                selectedCountry={addr.country} // Pass current country for pre-filling
+                selectedState={addr.state}   // Pass current state for pre-filling
                 onSelectCountry={(c) =>
                   handleAddressChange("shipping", i, "country", c.name)
                 }
@@ -1920,9 +1945,8 @@ export default function CustomerManagement() {
             />
           </div>
           <div>
-            {/* AccountSearch component for GL Account */}
             <AccountSearch
-              value={customerDetails.glAccount}
+              value={customerDetails.glAccount} // This should already be an object for AccountSearch
               onSelect={(selected) => {
                 console.log('Selected GL Account:', selected);
                 setCustomerDetails((prev) => ({
@@ -1937,7 +1961,10 @@ export default function CustomerManagement() {
         <div className="flex justify-end space-x-3 mt-6">
           <button
             type="button"
-            onClick={resetForm}
+            onClick={() => {
+              resetForm();
+              setView("list"); // Go back to list view on cancel
+            }}
             className="px-4 py-2 bg-gray-500 text-white rounded-md"
           >
             Cancel
