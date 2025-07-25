@@ -608,21 +608,53 @@ function InventoryEntryForm() {
   }, [data.items]);
 
   // Save
+  // const handleSave = useCallback(async () => {
+  //   try {
+  //     const payload = { ...data, ...summary };
+  //     if (isEdit) {
+  //       await axios.put(`/api/inventory/${editId}`, payload);
+  //       toast.success('Inventory updated');
+  //     } else {
+  //       await axios.post('/api/inventory', payload);
+  //       toast.success('Inventory saved');
+  //     }
+  //     router.push('/admin/inventory-list');
+  //   } catch (err) {
+  //     toast.error(err.response?.data?.error || err.message);
+  //   }
+  // }, [data, summary, isEdit, editId, router]);
+
   const handleSave = useCallback(async () => {
-    try {
-      const payload = { ...data, ...summary };
-      if (isEdit) {
-        await axios.put(`/api/inventory/${editId}`, payload);
-        toast.success('Inventory updated');
-      } else {
-        await axios.post('/api/inventory', payload);
-        toast.success('Inventory saved');
-      }
-      router.push('/admin/inventory-list');
-    } catch (err) {
-      toast.error(err.response?.data?.error || err.message);
+  try {
+    // ✅ Get token from localStorage or cookies
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Authentication required!");
+      return;
     }
-  }, [data, summary, isEdit, editId, router]);
+
+    const payload = { ...data, ...summary };
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+
+    if (isEdit) {
+      await axios.put(`/api/inventory/${editId}`, payload, { headers });
+      toast.success("Inventory updated successfully");
+    } else {
+      await axios.post("/api/inventory", payload, { headers });
+      toast.success("Inventory saved successfully");
+    }
+
+    router.push("/admin/inventory-list");
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to save inventory");
+    console.error("Save error:", err);
+  }
+}, [data, summary, isEdit, editId, router]);
+
 
   return (
     <div ref={parentRef} className="m-8 p-6 shadow-lg rounded-lg">
