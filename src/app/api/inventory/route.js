@@ -99,6 +99,63 @@ import '@/models/warehouseModels';
 import '@/models/ItemModels';
 import BOM from '@/models/BOM';
 
+
+
+export async function POST(req) {
+  await dbConnect();
+
+  try {
+    const token = getTokenFromHeader(req);
+    const user = await verifyJWT(token);
+    if (!user) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { warehouse, item, quantity, unitPrice, batches, productNo, productDesc } = await req.json();
+
+    if (!warehouse || !item) {
+      return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
+    }
+
+    // Check if inventory record exists for this warehouse + item
+    let inventory = await Inventory.findOne({ warehouse, item });
+
+    if (!inventory) {
+      // Create new inventory record
+      inventory = await Inventory.create({
+        warehouse,
+        item,
+        quantity: quantity || 0,
+        unitPrice: unitPrice || 0,
+        batches: batches || [],
+        productNo,
+        productDesc
+      });
+    } else {
+      // Update existing inventory record
+      inventory.quantity += quantity || 0;
+      inventory.unitPrice = unitPrice || inventory.unitPrice;
+
+      // Merge batch details if managed by batch
+      if (batches && batches.length > 0) {
+        for (const batch of batches) {
+          const existingBatch = inventory.batches.find(b => b.batchNumber === batch.batchNumber);
+          if (existingBatch) {
+            existingBatch.quantity += batch.quantity || 0;
+          } else {
+            inventory.batches.push(batch);
+          }
+        }
+      }
+      await inventory.save();
+    }
+
+    return NextResponse.json({ success: true, data: inventory }, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
 export async function GET() {
   await dbConnect();
 
