@@ -624,36 +624,41 @@ function InventoryEntryForm() {
   //   }
   // }, [data, summary, isEdit, editId, router]);
 
-  const handleSave = useCallback(async () => {
+const handleSave = useCallback(async () => {
   try {
-    // ✅ Get token from localStorage or cookies
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Authentication required!");
       return;
     }
 
-    const payload = { ...data, ...summary };
+    const headers = { Authorization: `Bearer ${token}` };
 
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+    // ✅ Transform data.items into inventory array
+    const inventories = data.items.map(item => ({
+      warehouse: data.warehouseId, // Make sure you select warehouse in your UI
+      item: item.item, // ObjectId of the selected item
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      batches: item.batches || [],
+      productNo: item.productNo || null,
+      productDesc: item.itemName,
+    }));
 
     if (isEdit) {
-      await axios.put(`/api/inventory/${editId}`, payload, { headers });
-      toast.success("Inventory updated successfully");
+      await axios.put(`/api/inventory/${editId}`, { inventories }, { headers });
+      toast.success("Inventory updated");
     } else {
-      await axios.post("/api/inventory", payload, { headers });
-      toast.success("Inventory saved successfully");
+      await axios.post("/api/inventory", { inventories }, { headers });
+      toast.success("Inventory saved");
     }
 
     router.push("/admin/inventory-list");
   } catch (err) {
-    toast.error(err.response?.data?.message || "Failed to save inventory");
-    console.error("Save error:", err);
+    toast.error(err.response?.data?.message || "Error saving inventory");
   }
-}, [data, summary, isEdit, editId, router]);
+}, [data, isEdit, editId, router]);
+
 
 
   return (
