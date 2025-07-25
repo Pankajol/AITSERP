@@ -170,7 +170,7 @@ const addressSchema = new mongoose.Schema({
   address2: { type: String, trim: true },
   city: { type: String, trim: true },
   state: { type: String, trim: true },
-  zip: {
+  pin: {
     type: String,
     trim: true,
     match: [/^[0-9]{6}$/, "Invalid zip code format"]
