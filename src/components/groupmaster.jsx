@@ -1,21 +1,32 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation"; // ✅ Import router
+import { useRouter } from "next/navigation";
 import useSearch from "@/hooks/useSearch";
 
-const GroupSearch = ({ onSelectGroup }) => {
+const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
-  const router = useRouter(); // ✅ Initialize router
+  const router = useRouter();
 
   const groupSearch = useSearch(async (query) => {
     const res = await fetch(`/api/groupscreate?search=${query}`);
     return res.ok ? await res.json() : [];
   });
+
+  // ✅ New useEffect to handle external 'value' prop for pre-filling
+  useEffect(() => {
+    if (value && value.name) {
+      setInputValue(value.name);
+      setSelectedGroup(value); // Assuming 'value' is already an object { name: '...' }
+    } else {
+      setInputValue("");
+      setSelectedGroup(null);
+    }
+  }, [value]); // Rerun when the 'value' prop changes
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -35,7 +46,6 @@ const GroupSearch = ({ onSelectGroup }) => {
   };
 
   const handleCustomInput = () => {
-    // ✅ Redirect to /admin/createGroup
     router.push("/admin/CreateGroup");
   };
 
@@ -55,6 +65,9 @@ const GroupSearch = ({ onSelectGroup }) => {
           onChange={(e) => {
             const val = e.target.value;
             setInputValue(val);
+            // Clear selectedGroup if input changes, indicating a new search/selection
+            setSelectedGroup(null);
+            onSelectGroup(null); // Also inform parent that selection is cleared
             groupSearch.handleSearch(val);
             setShowDropdown(true);
           }}
@@ -104,6 +117,119 @@ const GroupSearch = ({ onSelectGroup }) => {
 };
 
 export default GroupSearch;
+
+
+
+
+
+
+
+// "use client";
+
+// import React, { useState, useEffect, useRef } from "react";
+// import { useRouter } from "next/navigation"; // ✅ Import router
+// import useSearch from "@/hooks/useSearch";
+
+// const GroupSearch = ({ onSelectGroup }) => {
+//   const [selectedGroup, setSelectedGroup] = useState(null);
+//   const [showDropdown, setShowDropdown] = useState(false);
+//   const [inputValue, setInputValue] = useState("");
+//   const [error, setError] = useState(null);
+//   const dropdownRef = useRef(null);
+//   const router = useRouter(); // ✅ Initialize router
+
+//   const groupSearch = useSearch(async (query) => {
+//     const res = await fetch(`/api/groupscreate?search=${query}`);
+//     return res.ok ? await res.json() : [];
+//   });
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+//         setShowDropdown(false);
+//       }
+//     };
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
+
+//   const handleGroupSelect = (group) => {
+//     setSelectedGroup(group);
+//     setInputValue(group.name);
+//     onSelectGroup(group);
+//     setShowDropdown(false);
+//   };
+
+//   const handleCustomInput = () => {
+//     // ✅ Redirect to /admin/createGroup
+//     router.push("/admin/CreateGroup");
+//   };
+
+//   const handleClear = () => {
+//     setSelectedGroup(null);
+//     setInputValue("");
+//     onSelectGroup(null);
+//   };
+
+//   return (
+//     <div ref={dropdownRef} className="relative">
+//       <div className="flex items-center">
+//         <input
+//           type="text"
+//           placeholder="Type or select group"
+//           value={inputValue}
+//           onChange={(e) => {
+//             const val = e.target.value;
+//             setInputValue(val);
+//             groupSearch.handleSearch(val);
+//             setShowDropdown(true);
+//           }}
+//           onFocus={() => setShowDropdown(true)}
+//           className="border px-4 py-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+//         />
+//         {inputValue && (
+//           <button
+//             type="button"
+//             onClick={handleClear}
+//             className="ml-2 text-gray-500 hover:text-red-600"
+//             title="Clear"
+//           >
+//             ✕
+//           </button>
+//         )}
+//       </div>
+
+//       {showDropdown && (
+//         <div className="absolute border bg-white w-full max-h-40 overflow-y-auto z-10 rounded-md shadow-md mt-1">
+//           {groupSearch.loading && <p className="p-2">Loading...</p>}
+//           {!groupSearch.loading && groupSearch.results.length === 0 && (
+//             <div
+//               className="p-2 cursor-pointer text-blue-600 hover:bg-blue-50"
+//               onClick={handleCustomInput}
+//             >
+//               ➕ Create "{inputValue}"
+//             </div>
+//           )}
+//           {groupSearch.results.map((group) => (
+//             <div
+//               key={group._id}
+//               onClick={() => handleGroupSelect(group)}
+//               className={`p-2 cursor-pointer hover:bg-gray-200 ${
+//                 selectedGroup?._id === group._id ? "bg-blue-100" : ""
+//               }`}
+//             >
+//               {group.name}
+//             </div>
+//           ))}
+//         </div>
+//       )}
+
+//       {error && <p className="text-red-500 mt-1">{error}</p>}
+//     </div>
+//   );
+// };
+
+// export default GroupSearch;
 
 
 
