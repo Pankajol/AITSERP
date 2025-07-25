@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import useSearch from "@/hooks/useSearch";
+import useSearch from "@/hooks/useSearch"; // Assuming this path is correct
 
-const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
+const GroupSearch = ({ onSelectGroup, value }) => { // Accept 'value' prop
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -17,17 +17,20 @@ const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
     return res.ok ? await res.json() : [];
   });
 
-  // ✅ New useEffect to handle external 'value' prop for pre-filling
+  // Effect to handle external 'value' prop for pre-filling
   useEffect(() => {
     if (value && value.name) {
       setInputValue(value.name);
       setSelectedGroup(value); // Assuming 'value' is already an object { name: '...' }
+      groupSearch.setQuery(value.name); // ✅ Important: Also update useSearch's query
     } else {
       setInputValue("");
       setSelectedGroup(null);
+      groupSearch.setQuery(''); // ✅ Important: Clear useSearch's query
     }
   }, [value]); // Rerun when the 'value' prop changes
 
+  // Effect to handle clicks outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -41,6 +44,7 @@ const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     setInputValue(group.name);
+    groupSearch.setQuery(group.name); // Keep useSearch's query in sync with selected value
     onSelectGroup(group);
     setShowDropdown(false);
   };
@@ -53,6 +57,7 @@ const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
     setSelectedGroup(null);
     setInputValue("");
     onSelectGroup(null);
+    groupSearch.setQuery(''); // ✅ Clear useSearch's query on clear
   };
 
   return (
@@ -68,7 +73,8 @@ const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
             // Clear selectedGroup if input changes, indicating a new search/selection
             setSelectedGroup(null);
             onSelectGroup(null); // Also inform parent that selection is cleared
-            groupSearch.handleSearch(val);
+            groupSearch.handleSearch(val); // Trigger search based on current input value
+            groupSearch.setQuery(val); // ✅ Update useSearch's query to reflect current input
             setShowDropdown(true);
           }}
           onFocus={() => setShowDropdown(true)}
@@ -88,14 +94,17 @@ const GroupSearch = ({ onSelectGroup, value }) => { // ✅ Accept 'value' prop
 
       {showDropdown && (
         <div className="absolute border bg-white w-full max-h-40 overflow-y-auto z-10 rounded-md shadow-md mt-1">
-          {groupSearch.loading && <p className="p-2">Loading...</p>}
-          {!groupSearch.loading && groupSearch.results.length === 0 && (
+          {groupSearch.loading && <p className="p-2 text-gray-600">Loading...</p>}
+          {!groupSearch.loading && groupSearch.results.length === 0 && groupSearch.query && ( // Only show "Create" if there's a query and no results
             <div
               className="p-2 cursor-pointer text-blue-600 hover:bg-blue-50"
               onClick={handleCustomInput}
             >
               ➕ Create "{inputValue}"
             </div>
+          )}
+          {groupSearch.results.length === 0 && !groupSearch.loading && !groupSearch.query && (
+            <p className="p-2 text-gray-500">Start typing to search or select.</p>
           )}
           {groupSearch.results.map((group) => (
             <div
