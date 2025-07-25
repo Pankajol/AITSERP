@@ -840,10 +840,42 @@ export default function CustomerManagement() {
     setView("list");
   };
 
-  const handleEdit = c => {
-    setCustomerDetails(c);
-    setView("form");
-  };
+  // const handleEdit = c => {
+  //   setCustomerDetails(c);
+  //   setView("form");
+  // };
+
+  const handleEdit = (c) => {
+  setCustomerDetails({
+    ...c,
+    glAccount: c.glAccount
+      ? {
+          _id: c.glAccount._id,
+          value: c.glAccount._id,
+          label: `${c.glAccount.accountCode} - ${c.glAccount.accountName}`,
+          accountCode: c.glAccount.accountCode,
+          accountName: c.glAccount.accountName,
+        }
+      : null,
+    billingAddresses: (c.billingAddresses || []).map(addr => ({
+      address1: addr.address1 || "",
+      address2: addr.address2 || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      country: addr.country || "",
+      pin: addr.pin || "",
+    })),
+    shippingAddresses: (c.shippingAddresses || []).map(addr => ({
+      address1: addr.address1 || "",
+      address2: addr.address2 || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      country: addr.country || "",
+      pin: addr.pin || "",
+    })),
+  });
+  setView("form");
+};
 
   const handleDelete = async id => {
     if (!confirm("Are you sure?")) return;
@@ -1082,7 +1114,7 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("billing", i, "pin", e.target.value)
                 }
-                placeholder="ZIP"
+                placeholder="PIN"
                 className="border p-2 rounded"
               />
               <CountryStateSearch
@@ -1149,7 +1181,7 @@ export default function CustomerManagement() {
                 onChange={(e) =>
                   handleAddressChange("shipping", i, "pin", e.target.value)
                 }
-                placeholder="ZIP"
+                placeholder="PIN"
                 className="border p-2 rounded"
               />
               <CountryStateSearch
