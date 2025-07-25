@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 // Define a schema for batch details.
 const InventoryBatchSchema = new mongoose.Schema({
-  batchNumber: { type: String, required: true },
+  batchNumber: { type: String },
   expiryDate: { type: Date },
   manufacturer: { type: String },
   quantity: { type: Number, default: 0 }, // Quantity for this batch
@@ -10,6 +10,7 @@ const InventoryBatchSchema = new mongoose.Schema({
 }, { _id: false });
 
 const InventorySchema = new mongoose.Schema({
+  
   warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse', required: true },
   item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
   // For non-batch managed items.
